@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mess Management - Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header Section -->
+    <header class="bg-blue-600 text-white p-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Mess Management System</h1>
+      <a href="/login" class="bg-white text-blue-600 px-4 py-2 rounded-lg shadow">Login</a>
+    </header>
+
+    <!-- Rating Section with Horizontal Scroll -->
+    <section class="p-8">
+      <h2 class="text-xl font-semibold mb-4">Today's Ratings</h2>
+      <div class="flex overflow-x-auto space-x-6 pb-4">
+        <!-- Mess 1 Ratings -->
+        <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center w-full min-w-[100vw]">
+          <h3 class="text-lg font-medium">Mess 1 - Current Meal Rating ({{ meal }})</h3>
+          <p class="text-4xl font-bold text-blue-600 mt-2">{{ current_avg_rating_mess1 }}/5</p>
+          <h3 class="text-lg font-medium mt-4">Last Month's Average Rating</h3>
+          <p class="text-4xl font-bold text-green-600 mt-2">{{ monthly_avg_rating_mess1 }}/5</p>
+        </div>
+
+        <!-- Mess 2 Ratings -->
+        <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center w-full min-w-[100vw]">
+          <h3 class="text-lg font-medium">Mess 2 - Current Meal Rating ({{ meal }})</h3>
+          <p class="text-4xl font-bold text-blue-600 mt-2">{{ current_avg_rating_mess2 }}/5</p>
+          <h3 class="text-lg font-medium mt-4">Last Month's Average Rating</h3>
+          <p class="text-4xl font-bold text-green-600 mt-2">{{ monthly_avg_rating_mess2 }}/5</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Veg Menu Section -->
+    <section class="p-8">
+      <h2 class="text-xl font-semibold mb-4">Today's Veg Menu for {{ meal }}</h2>
+      <div class="bg-white p-6 rounded-lg shadow">
+        {% if veg_menu_items %}
+          <ul class="list-disc ml-6">
+            {% for item in veg_menu_items %}
+              <li class="text-lg">{{ item }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-gray-500">No Veg items available for this meal.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Non-Veg Menu Section for Mess 1 -->
+    <section class="p-8">
+      <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess 1) for {{ meal }}</h2>
+      <div class="bg-white p-6 rounded-lg shadow">
+        {% if non_veg_menu1 %}
+          <ul class="list-disc ml-6">
+            {% for item, cost in non_veg_menu1 %}
+              <li class="text-lg">{{ item }} - ₹{{cost}}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-gray-500">No Non-Veg items available in Mess 1 for this meal.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Non-Veg Menu Section for Mess 2 -->
+    <section class="p-8">
+      <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess 2) for {{ meal }}</h2>
+      <div class="bg-white p-6 rounded-lg shadow">
+        {% if non_veg_menu2 %}
+          <ul class="list-disc ml-6">
+            {% for item, cost in non_veg_menu2 %}
+              <li class="text-lg">{{ item }} - ₹{{cost}}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-gray-500">No Non-Veg items available in Mess 2 for this meal.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-800 text-white p-4 text-center mt-auto">
+      <p>&copy; 2025 Mess Management System. All Rights Reserved.</p>
+    </footer>
+  </div>
+</body>
+
+</html>

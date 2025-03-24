@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waste Management Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="min-h-screen flex flex-col items-center justify-center">
+    <h1 class="text-3xl font-bold text-red-600 mb-8">Waste Management Form</h1>
+
+    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg" onsubmit="return validateForm()">
+      <label class="block mb-4">
+        <span class="text-gray-700">Select Floor</span>
+        <select name="floor" id="floorSelect" class="mt-1 block w-full p-2 border rounded" onchange="toggleNonVegSection()">
+          {% if session['mess'] == 'mess1' %}
+            <option value="Ground">Ground Floor</option>
+            <option value="First">First Floor</option>
+          {% else %}
+            <option value="Second">Second Floor</option>
+            <option value="Third">Third Floor</option>
+          {% endif %}
+        </select>
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-gray-700">Total Waste Amount (in kg)</span>
+        <input type="number" name="waste_amount" min="0" step="0.1" class="mt-1 block w-full p-2 border rounded" required />
+      </label>
+
+      <h2 class="text-xl font-semibold mb-4">Veg Menu</h2>
+      {% for item in veg_menu_items %}
+        <label class="block mb-4">
+          <span class="text-gray-700">{{ item }}</span>
+          <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded" required />
+          <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded" required />
+        </label>
+      {% endfor %}
+
+      <!-- Non-Veg Section for Mess 1 -->
+      {% if session['mess'] == 'mess1' %}
+      <div id="nonVegSection1" class="hidden">
+        <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu (Mess 1)</h2>
+        {% for item, cost in non_veg_menu1 %}
+          <label class="block mb-4">
+            <span class="text-gray-700">{{ item }} - ₹{{ cost }}</span>
+            <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
+            <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
+          </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Non-Veg Section for Mess 2 -->
+      {% if session['mess'] == 'mess2' %}
+      <div id="nonVegSection2" class="hidden">
+        <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu (Mess 2)</h2>
+        {% for item, cost in non_veg_menu2 %}
+          <label class="block mb-4">
+            <span class="text-gray-700">{{ item }} - ₹{{ cost }}</span>
+            <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
+            <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
+          </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">Submit Waste Data</button>
+    </form>
+    <!-- <a href="/dashboard" class="mt-8 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Back to Dashboard</a> -->
+  </div>
+
+  <!-- JavaScript Section -->
+  <script>
+    const mess = "{{ session['mess'] }}";
+
+    function toggleNonVegSection() {
+      const floor = document.getElementById('floorSelect').value;
+      const nonVegSection1 = document.getElementById('nonVegSection1');
+      const nonVegSection2 = document.getElementById('nonVegSection2');
+      const nonVegInputs = document.querySelectorAll('.nonVegInput');
+
+      // Hide both sections initially
+      if (nonVegSection1) nonVegSection1.classList.add('hidden');
+      if (nonVegSection2) nonVegSection2.classList.add('hidden');
+      nonVegInputs.forEach(input => input.removeAttribute('required'));
+
+      // Show/Hide based on floor selection
+      if (floor === 'First' || floor === 'Third') {
+        if (mess === 'mess1') {
+          nonVegSection1.classList.remove('hidden');
+        } else if (mess === 'mess2') {
+          nonVegSection2.classList.remove('hidden');
+        }
+        nonVegInputs.forEach(input => input.setAttribute('required', 'true'));
+      }
+    }
+
+    function validateForm() {
+      const floor = document.getElementById('floorSelect').value;
+      const nonVegInputs = document.querySelectorAll('.nonVegInput');
+
+      if ((floor === 'Ground' || floor === 'Second')) {
+        for (const input of nonVegInputs) {
+          if (input.value) {
+            alert("Non-veg items cannot be entered on Ground or Second floor.");
+            return false;
+          }
+        }
+      }
+      alert('Form submitted successfully! Redirecting to dashboard...');
+      window.location.href = '/mess_dashboard';
+      return false;
+    }
+  </script>
+</body>
+</html>

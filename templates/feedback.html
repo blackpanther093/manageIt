@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedback Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="min-h-screen flex flex-col items-center justify-center">
+    <h1 class="text-3xl font-bold text-blue-600 mb-8">Feedback Form</h1>
+    <p class="text-lg mb-4">Welcome, {{ student_name }} from Mess {{ mess }}</p>
+    <p class="text-md mb-6">Meal: <strong>{{ meal }}</strong></p>
+
+    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
+      <h2 class="text-xl font-semibold mb-4">Veg Menu</h2>
+      {% for item in veg_menu_items %}
+        <label class="block mb-4">
+          <span class="text-gray-700">{{ item }}</span>
+          <input type="number" name="rating_{{ item }}" min="1" max="5" placeholder="Rate (1-5)" class="mt-1 block w-full p-2 border rounded required">
+          <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
+        </label>
+      {% endfor %}
+
+      {% if non_veg_menu1 %}
+        <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu (Mess 1)</h2>
+        {% for item in non_veg_menu1 %}
+          <label class="block mb-4">
+            <span class="text-gray-700">{{ item[0] }} - ₹{{ item[1] if item is iterable else 'N/A' }}</span>
+            <input type="number" name="rating_{{ item }}" min="1" max="5" placeholder="Rate (1-5)" class="mt-1 block w-full p-2 border rounded">
+            <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
+          </label>
+        {% endfor %}
+      {% endif %}
+
+      {% if non_veg_menu2 %}
+        <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu (Mess 2)</h2>
+        {% for item in non_veg_menu2 %}
+          <label class="block mb-4">
+            <span class="text-gray-700">{{ item[0] }} - ₹{{ item[1] if item is iterable else 'N/A' }}</span>
+            <input type="number" name="rating_{{ item }}" min="1" max="5" placeholder="Rate (1-5)" class="mt-1 block w-full p-2 border rounded">
+            <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
+          </label>
+        {% endfor %}
+      {% endif %}
+
+      <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Submit Feedback</button>
+    </form>
+  </div>
+</body>
+</html>
