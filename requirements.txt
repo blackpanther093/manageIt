@@ -11,7 +11,7 @@ httpx==0.28.1
 
 # Flask
 Flask==3.1.0
-
+mysql-connector-python==8.0.33
 # Security & Encryption
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
