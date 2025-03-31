@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col items-center p-8">
+
+  <!-- Top Navigation -->
+  <div class="w-full flex justify-between items-center mb-12">
+    <!-- Home Button -->
+    <a href="{{ url_for('home') }}" class="inline-flex items-center bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+      <i class="ph ph-house mr-2"></i> Home
+    </a>
+
+    <a href="{{ url_for('select_mess') }}" class="inline-flex items-center bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+      Select mess
+    </a>
+
+    <!-- Logout Button -->
+    <a href="{{ url_for('logout') }}" class="inline-flex items-center bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">
+      <i class="ph ph-sign-out mr-2"></i> Logout
+    </a>
+
+  </div>
+
+  <h1 class="text-4xl font-bold text-blue-600 mb-12">Admin Dashboard</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-4xl">
+
+    <!-- Update Menu -->
+    <a href="{{ url_for('update_veg_menu') }}" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300 flex items-center">
+      <i class="ph ph-notepad text-blue-600 text-3xl mr-4"></i>
+      <div>
+        <h2 class="text-xl font-semibold text-purple-600">Update Menu</h2>
+        <p class="text-gray-600">Modify the mess menu for different meals and days.</p>
+      </div>
+    </a>
+
+    <!-- View Feedback -->
+    <a href="{{ url_for('feedback_summary') }}" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300 flex items-center">
+      <i class="ph ph-chat-circle-dots text-green-600 text-3xl mr-4"></i>
+      <div>
+        <h2 class="text-xl font-semibold text-purple-600 mb-4">View Feedback</h2>
+        <p>Analyze student feedback for meals and food quality.</p>
+      </div>
+    </a>
+
+    <!-- View Waste Data -->
+    <a href="{{ url_for('waste_summary') }}" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300 flex items-center">
+      <i class="ph ph-trash text-red-600 text-3xl mr-4"></i>
+      <div>
+        <h2 class="text-xl font-semibold text-purple-600 mb-4">View Waste Data</h2>
+        <p>Track and monitor daily food waste data.</p>
+      </div>
+    </a>
+
+    <a href="{{ url_for('payment_summary') }}" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300 flex items-center">
+      <i class="ph ph-currency-inr text-yellow-600 text-3xl mr-4"></i>
+      <div>
+        <h2 class="text-xl font-semibold text-purple-600 mb-4">Review Payment Details</h2>
+        <p class="text-gray-700">View and analyze payment records.</p>
+      </div>
+    </a>
+    
+  </div>
+
+</body>
+</html>

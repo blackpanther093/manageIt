@@ -5,12 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Add Non-Veg Menu</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    @keyframes floatUp {
+      0% { transform: translateY(30px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    .flash-message { animation: floatUp 0.6s ease-out; }
+  </style>
 </head>
 <body class="bg-gray-100 font-sans">
-  <div class="min-h-screen flex flex-col items-center justify-center">
+  <div class="min-h-screen flex flex-col items-center justify-center relative">
+    <!-- Dashboard Button with Icon -->
+    <a href="/mess_dashboard" class="absolute top-4 left-4 text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+      <i class="ph ph-house mr-2"></i> Dashboard
+    </a>
+
     <h1 class="text-3xl font-bold text-blue-600 mb-8">Add Non-Veg Menu - {{ session['mess'] }}</h1>
 
-    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg" onsubmit="return submitForm()">
+    <!-- Flash Messages -->
+    <div id="flash-container" class="w-full max-w-lg mb-4"></div>
+
+    <!-- Form for Adding Items -->
+    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
       <p class="text-lg mb-4">Meal: <strong>{{ meal }}</strong></p>
 
       <div id="menu-items" class="space-y-4">
@@ -21,9 +39,29 @@
       </div>
 
       <button type="button" onclick="addMenuItem()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg">+ Add More</button>
-      <button type="submit" class="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Submit Menu</button>
     </form>
-    <a href="/mess_dashboard" class="mt-8 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Back to Dashboard</a>
+
+    <!-- Review Previously Added Items -->
+    <h2 class="text-xl font-semibold mt-10 mb-4">Previously Added Non-Veg Items</h2>
+    <!-- <pre>{{ previous_items }}</pre>  ✅ Debugging -->
+    <div id="review-section" class="w-full max-w-lg">
+      {% if previous_items %}
+        {% for item in previous_items %}
+          <div class="flex justify-between items-center bg-white p-4 mb-2 shadow rounded">
+            <span>{{ item[1] }} - ₹{{ item[2] }}</span>
+            <form method="post" action="/delete_item" style="display:inline;">
+              <input type="hidden" name="item_id" value="{{ item[0] }}">
+              <button type="submit" onclick="return confirm('Are you sure you want to delete this item?')" class="text-red-500 hover:text-red-700">❌ Delete</button>
+            </form>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-gray-500">No non-veg items added yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Submit Button Outside Form -->
+    <button onclick="document.querySelector('form').submit()" class="mt-8 bg-blue-600 text-white px-8 py-3 text-lg rounded-lg hover:bg-blue-700">Submit Menu</button>
   </div>
 
   <script>
@@ -36,33 +74,45 @@
       foodInput.type = 'text';
       foodInput.name = 'food_item[]';
       foodInput.placeholder = 'Food Item';
+      foodInput.required = true;
       foodInput.className = 'flex-1 p-2 border rounded';
 
       const costInput = document.createElement('input');
       costInput.type = 'number';
       costInput.name = 'cost[]';
       costInput.placeholder = 'Cost (in ₹)';
+      costInput.required = true;
       costInput.className = 'w-28 p-2 border rounded';
+
+      const deleteButton = document.createElement('button');
+      deleteButton.innerHTML = "❌";
+      deleteButton.type = "button";
+      deleteButton.className = 'text-red-500 font-bold';
+      deleteButton.onclick = function() {
+        container.removeChild(div);
+      };
 
       div.appendChild(foodInput);
       div.appendChild(costInput);
+      div.appendChild(deleteButton);
       container.appendChild(div);
     }
 
-    function submitForm() {
-      const containers = document.getElementById('menu-items').children;
-      for (let i = containers.length - 1; i >= 0; i--) {
-        const foodInput = containers[i].querySelector('input[name="food_item[]"]');
-        const costInput = containers[i].querySelector('input[name="cost[]"]');
-        
-        if (!foodInput.value.trim() || !costInput.value.trim()) {
-          containers[i].remove();
-        }
-      }
-      alert('Menu submitted successfully! Redirecting to dashboard...');
-      window.location.href = '{{ url_for("mess_dashboard") }}';
-      return false; 
+    function showFlashMessages() {
+      const container = document.getElementById('flash-container');
+      flashMessages.forEach((flash) => {
+        const flashDiv = document.createElement('div');
+        flashDiv.className = `flash-message p-3 rounded-lg text-white text-sm mt-2 ${flash.category === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+        flashDiv.textContent = flash.message;
+        container.appendChild(flashDiv);
+        setTimeout(() => {
+          flashDiv.style.transition = 'opacity 0.5s';
+          flashDiv.style.opacity = '0';
+          setTimeout(() => flashDiv.remove(), 500);
+        }, 5000);
+      });
     }
+    window.onload = showFlashMessages;
   </script>
 </body>
 </html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard - Mess Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <!-- Header Section -->
+  <header class="bg-blue-400 text-white p-4 flex justify-between items-center shadow-lg">
+    <h1 class="text-2xl font-bold">Mess Management System</h1>
+    <a href="/logout" class="bg-white text-blue-600 px-4 py-2 rounded-lg shadow-md">Logout</a>
+  </header>
+
+  <!-- Greeting Section -->
+  <section class="p-8">
+    <h2 class="text-3xl font-bold">{{ greeting }}, {{ session['student_id'] }}!</h2>
+  </section>
+
+  <!-- Feedback Reminder -->
+  <section class="p-8 flex justify-between items-center">
+    <div>
+      {% if feedback_status == "Feedback Pending" %}
+        <p class="text-red-500">You haven't submitted feedback for today yet. 
+          <a href="/feedback" class="text-blue-500 underline">Submit Feedback Now</a>
+        </p>
+      {% else %}
+        <p class="text-green-500">Thank you for submitting your feedback for today!</p>
+      {% endif %}
+    </div>
+    <a href="/feedback" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md ml-4">Submit Feedback</a>
+  </section>
+
+  <!-- Progress Bar for Mess Rating -->
+  <section class="p-8">
+    <h3 class="text-xl font-semibold">Mess Ratings for Today</h3>
+    <div class="mt-4 bg-white shadow-md rounded-lg p-4">
+      {% for mess_name, avg_rating in monthly_avg_ratings %}
+        <div class="mb-4">
+          <p class="text-lg font-semibold">{{ mess_name }} - Rating</p>
+          <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+            <div class="h-full bg-green-500" style="width: {{ avg_rating * 20 }}%"></div>
+          </div>
+          <p class="text-right mt-1 text-sm">{{ avg_rating }}/5</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Leaderboard Section -->
+  <section class="p-8">
+    <h3 class="text-xl font-semibold">Top-Rated Meals</h3>
+    <table class="w-full mt-4 bg-white shadow-md rounded-lg overflow-hidden">
+      <thead>
+        <tr class="bg-blue-500 text-white">
+          <th class="p-4">Food Item</th>
+          <th class="p-4">Average Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item, rating in leaderboard %}
+          <tr class="border-b">
+            <td class="p-4">{{ item }}</td>
+            <td class="p-4">{{ rating }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Waste Insight Section -->
+  <section class="p-8">
+    <h3 class="text-xl font-semibold">Recent Waste Insights</h3>
+    <ul class="mt-4">
+      {% for floor, waste in waste_insight %}
+        <li class="p-2 bg-red-100 mb-2 rounded-lg">Floor {{ floor }}: {{ waste }} Kg of waste</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <!-- Monthly Average Rating Section -->
+  <section class="p-8">
+    <h3 class="text-xl font-semibold">Monthly Average Ratings</h3>
+    <ul class="mt-4">
+      {% for mess_name, avg_rating in monthly_avg_ratings %}
+        <li class="p-2 bg-green-100 mb-2 rounded-lg">{{ mess_name }}: {{ avg_rating }}/5</li>
+      {% endfor %}
+    </ul>
+  </section>
+</body>
+</html>

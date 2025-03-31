@@ -5,19 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Feedback Form</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    /* Floating Animation */
+    @keyframes floatUp {
+      0% {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .flash-message {
+      animation: floatUp 0.6s ease-out;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 font-sans">
+  <a href="\home" class="absolute top-5 right-5 inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
+    <i class="ph ph-house mr-2"></i> Dashboard
+  </a>
   <div class="min-h-screen flex flex-col items-center justify-center">
-    <h1 class="text-3xl font-bold text-blue-600 mb-8">Feedback Form</h1>
+    <h1 class="text-3xl mt-4 font-bold text-blue-600 mb-8">Feedback Form</h1>
     <p class="text-lg mb-4">Welcome, {{ student_name }} from Mess {{ mess }}</p>
     <p class="text-md mb-6">Meal: <strong>{{ meal }}</strong></p>
 
-    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
+    <!-- Flash Message Container -->
+    <div id="flash-container" class="w-full max-w-lg mb-4"></div>
+
+    <form method="post" class="bg-white mb-8 p-8 rounded-lg shadow-md w-full max-w-lg">
       <h2 class="text-xl font-semibold mb-4">Veg Menu</h2>
       {% for item in veg_menu_items %}
         <label class="block mb-4">
           <span class="text-gray-700">{{ item }}</span>
-          <input type="number" name="rating_{{ item }}" min="1" max="5" placeholder="Rate (1-5)" class="mt-1 block w-full p-2 border rounded required">
+          <select name="rating_{{ item }}" class="mt-1 block w-full p-2 border rounded" required>
+            <option value="" disabled selected>Select Rating</option>
+            {% for i in range(1, 6) %}
+              <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+          </select>
           <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
         </label>
       {% endfor %}
@@ -27,7 +56,12 @@
         {% for item in non_veg_menu1 %}
           <label class="block mb-4">
             <span class="text-gray-700">{{ item[0] }} - ₹{{ item[1] if item is iterable else 'N/A' }}</span>
-            <input type="number" name="rating_{{ item }}" min="1" max="5" placeholder="Rate (1-5)" class="mt-1 block w-full p-2 border rounded">
+            <select name="rating_{{ item }}" class="mt-1 block w-full p-2 border rounded" required>
+              <option value="" disabled selected>Select Rating</option>
+              {% for i in range(1, 6) %}
+                <option value="{{ i }}">{{ i }}</option>
+              {% endfor %}
+            </select>
             <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
           </label>
         {% endfor %}
@@ -38,7 +72,12 @@
         {% for item in non_veg_menu2 %}
           <label class="block mb-4">
             <span class="text-gray-700">{{ item[0] }} - ₹{{ item[1] if item is iterable else 'N/A' }}</span>
-            <input type="number" name="rating_{{ item }}" min="1" max="5" placeholder="Rate (1-5)" class="mt-1 block w-full p-2 border rounded">
+            <select name="rating_{{ item }}" class="mt-1 block w-full p-2 border rounded" required>
+              <option value="" disabled selected>Select Rating</option>
+              {% for i in range(1, 6) %}
+                <option value="{{ i }}">{{ i }}</option>
+              {% endfor %}
+            </select>
             <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
           </label>
         {% endfor %}
@@ -47,5 +86,34 @@
       <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Submit Feedback</button>
     </form>
   </div>
+
+  <script>
+    const flashMessages = [
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% for category, message in messages %}
+          { category: "{{ category }}", message: "{{ message }}" },
+        {% endfor %}
+      {% endwith %}
+    ];
+
+    function showFlashMessages() {
+      const container = document.getElementById('flash-container');
+      
+      flashMessages.forEach((flash) => {
+        const flashDiv = document.createElement('div');
+        flashDiv.className = `flash-message p-3 rounded-lg text-white text-sm mt-2 ${flash.category === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+        flashDiv.textContent = flash.message;
+        container.appendChild(flashDiv);
+
+        setTimeout(() => {
+          flashDiv.style.transition = 'opacity 0.5s';
+          flashDiv.style.opacity = '0';
+          setTimeout(() => flashDiv.remove(), 500);
+        }, 5000);
+      });
+    }
+
+    window.onload = showFlashMessages;
+  </script>
 </body>
 </html>

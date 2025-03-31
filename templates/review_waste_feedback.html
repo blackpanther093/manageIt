@@ -10,24 +10,29 @@
   <div class="min-h-screen flex flex-col items-center justify-center py-8">
     <h1 class="text-3xl font-bold text-blue-600 mb-8">Review Waste Feedback</h1>
 
-    {% if line_plot %}
-      <h2 class="text-xl font-semibold mb-4">Waste Over Time</h2>
-      <div class="mb-8">{{ line_plot | safe }}</div>
-    {% else %}
+    {% if no_data %}
       <p class="text-gray-600 mb-8">No waste data available for the past 30 days.</p>
-    {% endif %}
+    {% else %}
+      <h2 class="text-xl font-semibold mb-4">Waste Distribution Between Mess1 and Mess2</h2>
+      <div class="mb-8">{{ pie_plot | safe }}</div>
 
-    {% if bar_plot %}
-      <h2 class="text-xl font-semibold mb-4">Food Item-wise Waste</h2>
-      <div class="mb-8">{{ bar_plot | safe }}</div>
-    {% endif %}
-
-    {% if pie_plot %}
       <h2 class="text-xl font-semibold mb-4">Floor-wise Waste Distribution</h2>
-      <div>{{ pie_plot | safe }}</div>
+      <div class="mb-8">{{ floor_pie_plot | safe }}</div>
+
+      <h2 class="text-xl font-semibold mb-4">Odd Week Waste Trend</h2>
+      <div class="mb-8">{{ odd_plot | safe }}</div>
+
+      <h2 class="text-xl font-semibold mb-4">Even Week Waste Trend</h2>
+      <div class="mb-8">{{ even_plot | safe }}</div>
+
+      <h2 class="text-xl font-semibold mb-4">7-Day Moving Average of Waste</h2>
+      <div class="mb-8">{{ moving_avg_plot | safe }}</div>
+
+      <h2 class="text-xl font-semibold mb-4">Scatter Plot of Food Waste</h2>
+      <div>{{ scatter_plot | safe }}</div>
     {% endif %}
 
-    <a href="/mess_dashboard" class="mt-8 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Back to Dashboard</a>
+    <a href="/admin_dashboard" class="mt-8 mb-8 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Back to Dashboard</a>
   </div>
 </body>
 </html>

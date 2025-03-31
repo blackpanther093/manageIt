@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timely Waste Details - Floor {{ floor }} ({{ waste_date }} - {{ meal }})</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="bg-gray-100 font-sans p-8">
+
+  <!-- Header Section -->
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-4xl font-bold text-blue-700 text-center flex-1">Waste Details for {{ floor }} Floor on {{ waste_date }} ( {{ meal }} )</h1>
+    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
+      <i class="ph ph-house mr-2"></i> Dashboard
+    </a>
+  </div>
+
+  {% if waste_data %}
+    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+      <thead>
+        <tr class="bg-blue-200">
+          <th class="py-3 px-5 border-b">Food Item</th>
+          <th class="py-3 px-5 border-b">Prepared Amount (Kg)</th>
+          <th class="py-3 px-5 border-b">Leftover Amount (Kg)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for food_item, prepared_amount, leftover_amount in waste_data %}
+          <tr class="hover:bg-gray-100 transition">
+            <td class="py-3 px-5 border-b">{{ food_item }}</td>
+            <td class="py-3 px-5 border-b">{{ prepared_amount }} Kg</td>
+            <td class="py-3 px-5 border-b">{{ leftover_amount }} Kg</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-gray-600 text-lg mt-6">No waste data available for this meal.</p>
+  {% endif %}
+
+  <!-- Back to Waste Details -->
+  <a href="{{ url_for('daily_waste', floor=floor, waste_date=waste_date) }}" class="mt-8 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">Back to Daily Waste Detail</a>
+</body>
+</html>

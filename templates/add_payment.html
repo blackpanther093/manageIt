@@ -5,22 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Enter Payment Details</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    /* Floating Animation */
+    @keyframes floatUp {
+      0% {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .flash-message {
+      animation: floatUp 0.6s ease-out;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="min-h-screen flex flex-col items-center justify-center">
+
+    <!-- Dashboard Button with Icon at the Top Left -->
+    <a href="/mess_dashboard" class="absolute top-4 left-4 text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+      <i class="ph ph-house mr-2"></i> Dashboard
+    </a>
+
     <h1 class="text-3xl font-bold text-blue-600 mb-8">Enter Payment Details</h1>
 
-    {% with messages = get_flashed_messages(with_categories=True) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="p-4 mb-4 text-white rounded {{ 'bg-red-500' if category == 'error' else 'bg-green-500' }}">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg" onsubmit="return redrct()">
+    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
       <label class="block mb-4">
         <span class="text-gray-700">Student Roll Number (s_id)</span>
         <input type="text" name="s_id" placeholder="Enter Student Roll Number" class="mt-1 block w-full p-2 border rounded" required />
@@ -28,7 +42,7 @@
 
       <label class="block mb-4">
         <span class="text-gray-700">Food Item</span>
-        <select name="food_item" id="food_item" class="mt-1 block w-full p-2 border rounded" required>
+        <select name="food_item" class="mt-1 block w-full p-2 border rounded" required>
           {% if not food_items %}
             <option disabled>No food items available</option>
           {% else %}
@@ -49,21 +63,42 @@
         </select>
       </label>
 
+      <!-- Submit Button in Prominent Position -->
       <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Submit Payment</button>
     </form>
-    <a href="/mess_dashboard" class="mt-8 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Back to Dashboard</a>
-  </div>
-  <script>
-    window.onload = function() {
-    const errorMessage = document.querySelector('.bg-red-500');
-    const successMessage = document.querySelector('.bg-green-500');
 
-    if (successMessage) {
-      alert(successMessage);
-    } else if (errorMessage) {
-      alert(errorMessage);
+    <!-- Flash Message Container (Below the button) -->
+    <div id="flash-container" class="w-full max-w-lg mt-4"></div>
+  </div>
+
+  <script>
+    const flashMessages = [
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% for category, message in messages %}
+          { category: "{{ category }}", message: "{{ message }}" },
+        {% endfor %}
+      {% endwith %}
+    ];
+
+    function showFlashMessages() {
+      const container = document.getElementById('flash-container');
+      
+      flashMessages.forEach((flash) => {
+        const flashDiv = document.createElement('div');
+        flashDiv.className = `flash-message p-3 rounded-lg text-white text-sm mt-2 ${flash.category === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+        flashDiv.textContent = flash.message;
+        container.appendChild(flashDiv);
+
+        // Remove after 5 seconds with fade-out effect
+        setTimeout(() => {
+          flashDiv.style.transition = 'opacity 0.5s';
+          flashDiv.style.opacity = '0';
+          setTimeout(() => flashDiv.remove(), 500);
+        }, 5000);
+      });
     }
-  }
+
+    window.onload = showFlashMessages;
   </script>
 </body>
 </html>
