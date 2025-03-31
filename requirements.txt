@@ -1,3 +1,4 @@
+# Add your regular requirements here
 gunicorn
 aiohappyeyeballs==2.6.1
 aiohttp==3.11.14
@@ -91,7 +92,7 @@ pyparsing==3.2.0
 python-dateutil==2.9.0.post0
 python-json-logger==3.2.1
 pytz==2024.2
-pywin32==308
+# Removed pywin32 (Linux incompatibility)
 pywinpty==2.0.14
 PyYAML==6.0.2
 pyzmq==26.2.0
