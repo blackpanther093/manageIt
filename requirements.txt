@@ -1,5 +1,8 @@
 # Web Server
 gunicorn
+dotenv
+datetime
+faker
 
 # HTTP & Asynchronous libraries
 aiohappyeyeballs==2.6.1
@@ -25,6 +28,7 @@ numpy==2.2.1
 # Data visualization
 matplotlib==3.10.0
 seaborn==0.13.2
+plotly
 
 # Miscellaneous utilities
 beautifulsoup4==4.12.3
