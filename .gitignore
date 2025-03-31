@@ -1,0 +1,17 @@
+# Ignore the virtual environment folder
+venv/
+
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+
+# Ignore environment files
+.env
+
+# Ignore log files
+*.log
+
+# Ignore system files (Windows)
+Thumbs.db
+Desktop.ini
+
