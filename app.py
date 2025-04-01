@@ -1,5 +1,5 @@
 from flask import Flask
-from routes import app as routes_blueprint
+# from routes import app
 import os
 from dotenv import load_dotenv
 from routes import app

@@ -16,25 +16,17 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    DB_HOST = os.getenv('DB_HOST', 'localhost')
-    DB_USER = os.getenv('DB_USER', 'root')
-    DB_PASSWORD = os.getenv('DB_PASSWORD', 'Goy@l123')
-    DATABASES = {
-        'mess_management': os.getenv('DB_NAME_MAIN', 'mess_management'),
-        'mess1': os.getenv('DB_NAME_MESS1', 'mess1'),
-        'mess2': os.getenv('DB_NAME_MESS2', 'mess2')
-    }
+    DB_HOST = os.getenv('DB_HOST')
+    DB_USER = os.getenv('DB_USER')
+    DB_PASSWORD = os.getenv('DB_PASSWORD')
+    DATABASE_NAME = os.getenv('DB_NAME')
 
 class ProductionConfig(Config):
     DEBUG = False
     DB_HOST = os.getenv('DB_HOST')
     DB_USER = os.getenv('DB_USER')
     DB_PASSWORD = os.getenv('DB_PASSWORD')
-    DATABASES = {
-        'mess_management': os.getenv('DB_NAME_MAIN', 'mess_management'),
-        'mess1': os.getenv('DB_NAME_MESS1', 'mess1'),
-        'mess2': os.getenv('DB_NAME_MESS2', 'mess2')
-    }
+    DATABASE_NAME = os.getenv('DB_NAME')
 # Choose configuration based on the environment variable
 config = {
     'development': DevelopmentConfig,
