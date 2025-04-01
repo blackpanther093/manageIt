@@ -8,11 +8,29 @@
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen">
-  <a href="\home" class="absolute top-5 left-5 inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
+  <a href="\home" class="absolute top-6 left-6 inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
     <i class="ph ph-house mr-2"></i> Dashboard
   </a>
-  <div class="bg-white p-8 ml-5 mr-5 rounded-lg shadow-md w-full max-w-md relative">
+  
+  <div class="bg-white p-8 ml-5 mr-5 mt-20 mb-8 rounded-lg shadow-md w-full max-w-md relative">
     <h1 class="text-2xl font-bold text-center mb-6 text-blue-600">Mess Management System</h1>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div id="flash-messages" class="mb-4">
+          {% for category, message in messages %}
+            <div class="p-3 rounded-lg text-white 
+                {% if 'error' in category %} bg-red-500 
+                {% elif 'success' in category %} bg-green-500 
+                {% else %} bg-blue-500 {% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <form method="post">
       <label class="block mb-4">
         <span class="text-gray-700">ID</span>
@@ -26,10 +44,18 @@
 
       <button type="submit" class="bg-blue-600 text-white w-full py-2 rounded-lg hover:bg-blue-700">Login</button>
     </form>
-
-    {% if error %}
-      <p class="text-red-500 mt-4 text-center">{{ error }}</p>
-    {% endif %}
   </div>
+
+  <script>
+    // Remove flash messages after 5 seconds
+    setTimeout(() => {
+      let flashMessages = document.getElementById("flash-messages");
+      if (flashMessages) {
+        flashMessages.style.transition = "opacity 0.5s ease-out";
+        flashMessages.style.opacity = "0";
+        setTimeout(() => flashMessages.remove(), 500); // Remove from DOM
+      }
+    }, 5000);
+  </script>
 </body>
 </html>

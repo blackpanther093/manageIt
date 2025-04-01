@@ -6,45 +6,60 @@
   <title>Payment Details for {{ food_item }}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body {
+      overflow-x: hidden;
+    }
+    .table-container {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans p-8">
+<body class="bg-gray-100 font-sans sm:p-4 p-2">
 
   <!-- Header Section -->
-  <div class="flex justify-between items-center mb-8">
-    <h1 class="text-4xl font-bold text-blue-700 text-center flex-1">Payment Details for {{ meal }} on {{ payment_date }}</h1>
-    <button onclick="redirect_dash()" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
+  <div class="flex justify-between items-center mb-4">
+    <button onclick="redirect_dash()" class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
       <i class="ph ph-house mr-2"></i> Dashboard
     </button>
   </div>
 
+  <!-- Title Section -->
+  <div class="text-center mb-4">
+    <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">Payment Details for {{ meal }} on {{ payment_date }}</h1>
+  </div>
+
   {% if details %}
-    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-      <thead class="bg-blue-200">
-        <tr>
-          <th class="py-3 px-5 border-b">Student ID</th>
-          <th class="py-3 px-5 border-b">Food Item</th>
-          <th class="py-3 px-5 border-b">Amount (₹)</th>
-          <th class="py-3 px-5 border-b">Payment Mode</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s_id, food_item, amount, payment_mode in details %}
-          <tr class="hover:bg-gray-100 transition">
-            <td class="py-3 px-5 border-b">{{ s_id }}</td>
-            <td class="py-3 px-5 border-b">{{ food_item }}</td>
-            <td class="py-3 px-5 border-b">₹{{ amount }}</td>
-            <td class="py-3 px-5 border-b">{{ payment_mode }}</td>
+    <div class="bg-white shadow-md rounded-lg mt-4 table-container">
+      <table class="w-full border-collapse">
+        <thead class="bg-blue-200">
+          <tr>
+            <th class="py-2 px-3 border-b">Student ID</th>
+            <th class="py-2 px-3 border-b">Food Item</th>
+            <th class="py-2 px-3 border-b">Amount (₹)</th>
+            <th class="py-2 px-3 border-b">Payment Mode</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for s_id, food_item, amount, payment_mode in details %}
+            <tr class="hover:bg-gray-100 transition">
+              <td class="py-2 px-3 border-b">{{ s_id }}</td>
+              <td class="py-2 px-3 border-b">{{ food_item }}</td>
+              <td class="py-2 px-3 border-b">₹{{ amount }}</td>
+              <td class="py-2 px-3 border-b">{{ payment_mode }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p class="text-gray-600 text-lg mt-6">No payment details found for this item.</p>
+    <p class="text-gray-600 text-lg mt-4 text-center">No payment details found for this item.</p>
   {% endif %}
 
   <!-- Back to Payment Summary Button -->
-  <div class="mt-8 text-center">
-    <a href="/review_payment_details" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
+  <div class="mt-4 text-center">
+    <a href="/review_payment_details" class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
       Back to Payment Summary
     </a>
   </div>

@@ -11,39 +11,50 @@
       0% { transform: translateY(30px); opacity: 0; }
       100% { transform: translateY(0); opacity: 1; }
     }
-
     .flash-message { animation: floatUp 0.6s ease-out; }
   </style>
 </head>
 <body class="bg-gray-100 font-sans">
-  <div class="min-h-screen flex flex-col items-center justify-center relative">
-    <!-- Dashboard Button with Icon -->
-    <a href="/mess_dashboard" class="absolute top-4 left-4 text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+  <div class="min-h-screen flex flex-col items-center justify-center relative px-4 py-12">
+    <!-- Dashboard Button -->
+    <a href="/mess_dashboard" class="absolute top-6 left-6 text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center shadow-lg">
       <i class="ph ph-house mr-2"></i> Dashboard
     </a>
 
-    <h1 class="text-3xl font-bold text-blue-600 mb-8">Add Non-Veg Menu - {{ session['mess'] }}</h1>
+    <h1 class="text-3xl font-bold text-blue-600 mt-8 mb-8 text-center">Add Non-Veg Menu - {{ session['mess'] }}</h1>
 
     <!-- Flash Messages -->
-    <div id="flash-container" class="w-full max-w-lg mb-4"></div>
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div id="flash-container" class="w-full max-w-lg mb-6">
+          {% for category, message in messages %}
+            <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 
+              {% if 'error' in category %} bg-red-500 
+              {% elif 'success' in category %} bg-green-500 
+              {% else %} bg-blue-500 {% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
     <!-- Form for Adding Items -->
-    <form method="post" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
-      <p class="text-lg mb-4">Meal: <strong>{{ meal }}</strong></p>
+    <form method="post" class="bg-white px-6 py-8 rounded-lg shadow-md w-full max-w-lg">
+      <p class="text-lg mb-6">Meal: <strong>{{ meal }}</strong></p>
 
       <div id="menu-items" class="space-y-4">
-        <div class="flex items-center space-x-4">
-          <input type="text" name="food_item[]" placeholder="Food Item" required class="flex-1 p-2 border rounded" />
-          <input type="number" name="cost[]" placeholder="Cost (in ₹)" required class="w-28 p-2 border rounded" />
+        <div class="flex flex-wrap items-center space-x-4">
+          <input type="text" name="food_item[]" placeholder="Food Item" required class="flex-1 w-3/4 p-3 border rounded" />
+          <input type="number" name="cost[]" placeholder="Cost (₹)" required class="w-1/5 p-3 border rounded" />
         </div>
       </div>
 
-      <button type="button" onclick="addMenuItem()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg">+ Add More</button>
+      <button type="button" onclick="addMenuItem()" class="mt-6 bg-green-500 text-white px-5 py-2 rounded-lg">+ Add More</button>
     </form>
 
     <!-- Review Previously Added Items -->
-    <h2 class="text-xl font-semibold mt-10 mb-4">Previously Added Non-Veg Items</h2>
-    <!-- <pre>{{ previous_items }}</pre>  ✅ Debugging -->
+    <h2 class="text-xl font-semibold mt-10 mb-4 text-center">Previously Added Non-Veg Items</h2>
     <div id="review-section" class="w-full max-w-lg">
       {% if previous_items %}
         {% for item in previous_items %}
@@ -56,33 +67,33 @@
           </div>
         {% endfor %}
       {% else %}
-        <p class="text-gray-500">No non-veg items added yet.</p>
+        <p class="text-gray-500 text-center">No non-veg items added yet.</p>
       {% endif %}
     </div>
 
-    <!-- Submit Button Outside Form -->
-    <button onclick="document.querySelector('form').submit()" class="mt-8 bg-blue-600 text-white px-8 py-3 text-lg rounded-lg hover:bg-blue-700">Submit Menu</button>
+    <!-- Submit Button -->
+    <button onclick="document.querySelector('form').submit()" class="mt-12 bg-blue-600 text-white px-8 py-2 text-lg rounded-lg hover:bg-blue-700">Submit Menu</button>
   </div>
 
   <script>
     function addMenuItem() {
       const container = document.getElementById('menu-items');
       const div = document.createElement('div');
-      div.className = 'flex items-center space-x-4';
+      div.className = 'flex flex-wrap items-center space-x-4';
 
       const foodInput = document.createElement('input');
       foodInput.type = 'text';
       foodInput.name = 'food_item[]';
       foodInput.placeholder = 'Food Item';
       foodInput.required = true;
-      foodInput.className = 'flex-1 p-2 border rounded';
+      foodInput.className = 'flex-1 p-3 w-3/4 border rounded';
 
       const costInput = document.createElement('input');
       costInput.type = 'number';
       costInput.name = 'cost[]';
-      costInput.placeholder = 'Cost (in ₹)';
+      costInput.placeholder = 'Cost (₹)';
       costInput.required = true;
-      costInput.className = 'w-28 p-2 border rounded';
+      costInput.className = 'w-1/5 p-3 border rounded';
 
       const deleteButton = document.createElement('button');
       deleteButton.innerHTML = "❌";
@@ -98,21 +109,18 @@
       container.appendChild(div);
     }
 
-    function showFlashMessages() {
-      const container = document.getElementById('flash-container');
-      flashMessages.forEach((flash) => {
-        const flashDiv = document.createElement('div');
-        flashDiv.className = `flash-message p-3 rounded-lg text-white text-sm mt-2 ${flash.category === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
-        flashDiv.textContent = flash.message;
-        container.appendChild(flashDiv);
-        setTimeout(() => {
-          flashDiv.style.transition = 'opacity 0.5s';
-          flashDiv.style.opacity = '0';
-          setTimeout(() => flashDiv.remove(), 500);
-        }, 5000);
-      });
+    function removeFlashMessages() {
+      setTimeout(() => {
+        let flashMessages = document.querySelectorAll(".flash-message");
+        flashMessages.forEach((msg) => {
+          msg.style.transition = "opacity 0.5s ease-out";
+          msg.style.opacity = "0";
+          setTimeout(() => msg.remove(), 500);
+        });
+      }, 5000);
     }
-    window.onload = showFlashMessages;
+
+    window.onload = removeFlashMessages;
   </script>
 </body>
 </html>

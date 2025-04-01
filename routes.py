@@ -20,11 +20,17 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/home')
 def home():
-    meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
-    current_avg_rating_mess1, current_avg_rating_mess2 = avg_rating()
+    meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu() or (None, [], [], [])
+    current_avg_rating_mess1, current_avg_rating_mess2 = avg_rating() or (None, None)
     if not meal or (not veg_menu_items and not non_veg_menu1 and not non_veg_menu2):
-        return "No meal available."
-    return render_template('home_page.html', meal=meal, veg_menu_items=veg_menu_items, non_veg_menu1=non_veg_menu1, non_veg_menu2=non_veg_menu2, current_avg_rating_mess1 = current_avg_rating_mess1, current_avg_rating_mess2 = current_avg_rating_mess2)
+        return render_template("home_page.html", meal=None)
+    return render_template("home_page.html",
+        meal=meal,
+        veg_menu_items=veg_menu_items,
+        non_veg_menu1=non_veg_menu1,
+        non_veg_menu2=non_veg_menu2,
+        current_avg_rating_mess1=current_avg_rating_mess1,
+        current_avg_rating_mess2=current_avg_rating_mess2)
 
 # app = Flask(__name__)
 
@@ -63,7 +69,7 @@ def login():
             return redirect(url_for('mess_dashboard'))
 
     # Check if the user is an admin
-        cursor.execute("SELECT admin_id, password FROM admin WHERE admin_id = %s AND password = %s", (id, password))
+        cursor.execute("SELECT admin_id, username FROM admin WHERE admin_id = %s AND password = %s", (id, password))
         admin = cursor.fetchone()
 
         if admin:
@@ -76,14 +82,14 @@ def login():
             return redirect(url_for('admin_dashboard'))
         cursor.close()
         connection.close()
-        # return "Invalid id or Password."
+        flash("Invalid id or Password.",'error')
         return redirect(url_for('login'))
         
         # cursor.close()
         # connection.close()
     return render_template('login.html')
 
-@app.route('/feedback', methods=['GET', 'POST'])
+@app.route('/feedback', methods=['GET','POST'])
 def feedback():
     # Ensure student is logged in
     if 'student_id' not in session:
@@ -98,35 +104,54 @@ def feedback():
 
     meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
     if not meal:
-        return "No meal available at the moment."
+        flash("No meal available at the moment.", "error")
+        return redirect(url_for('feedback'))
+
+    exclusions = {'salt', 'sugar', 'ghee', 'podi', 'coffee', 'bbj', 'sprouts', 'curd', 'papad'}
+    veg_items = [
+        item for item in veg_menu_items 
+        if item.lower() not in exclusions 
+        and not any(keyword in item.lower() for keyword in ['banana', 'pickle', 'salad', 'cut fruit', 'sauce', 'chutney'])
+    ]
 
     if request.method == 'POST':
-        # Collect Feedback Data
-        food_ratings = {}
-        comments = {}
-        non_veg_menu = non_veg_menu1 if mess == 'mess1' else non_veg_menu2
-        menu_items = veg_menu_items + non_veg_menu
-
-        for item in menu_items:
-            rating = request.form.get(f'rating_{item}')
-            comment = request.form.get(f'comment_{item}')
-            if rating:
-                food_ratings[item] = int(rating)
-                comments[item] = comment if comment else None
-
-        if not food_ratings:
-            return "No ratings submitted."
-
-        # Store Feedback in Database
         try:
-            connection = get_db_connection()
+            connection = get_db_connection(db_name)
             cursor = connection.cursor()
+
+            # Check if feedback already exists
+            cursor.execute("""
+                SELECT COUNT(*) FROM feedback_summary
+                WHERE s_id = %s AND feedback_date = CURDATE() AND meal = %s
+            """, (student_id, meal))
+            feedback_exists = cursor.fetchone()[0]
+
+            if feedback_exists:
+                flash("You have already submitted feedback for this meal today.", "error")
+                return redirect(url_for('feedback'))
+
+            # Collect Feedback Data
+            food_ratings = {}
+            comments = {}
+            non_veg_menu = non_veg_menu1 if mess == 'mess1' else non_veg_menu2
+            menu_items = veg_items + non_veg_menu
+
+            for item in menu_items:
+                rating = request.form.get(f'rating_{item}')
+                comment = request.form.get(f'comment_{item}')
+                if rating:
+                    food_ratings[item] = int(rating)
+                    comments[item] = comment if comment else None
+
+            if not food_ratings:
+                flash("No ratings submitted. Please provide at least one rating.", "error")
+                return redirect(url_for('feedback'))
 
             # Insert into feedback_summary
             cursor.execute("""
-                INSERT INTO feedback_summary (s_id, feedback_date, meal, mess)
-                VALUES (%s, CURDATE(), %s, %s)
-            """, (student_id, meal, mess))
+                INSERT INTO feedback_summary (s_id, feedback_date, meal)
+                VALUES (%s, CURDATE(), %s)
+            """, (student_id, meal))
             feedback_id = cursor.lastrowid
 
             # Insert into feedback_details
@@ -140,16 +165,24 @@ def feedback():
             connection.commit()
             cursor.close()
             connection.close()
-        except Exception as e:
-            import traceback
-            print("Error details:", traceback.format_exc())
-            print(f"Error storing feedback: {e}")
-            connection.rollback()
-            return "An error occurred while submitting feedback."
 
-        return "Feedback submitted successfully!"
-    
-    return render_template('feedback.html', meal=meal, veg_menu_items=veg_menu_items, non_veg_menu1=non_veg_menu1 if mess == 'mess1' else [], non_veg_menu2=non_veg_menu2 if mess == 'mess2' else [], student_name=student_name, mess=mess)
+            flash("Feedback submitted successfully!", "success")
+            return redirect(url_for('feedback'))
+
+        except Exception as e:
+            connection.rollback()
+            flash("An error occurred while submitting feedback. Please try again.", "error")
+            return redirect(url_for('feedback'))
+
+    return render_template(
+        'feedback.html',
+        meal=meal,
+        veg_menu_items=veg_items,
+        non_veg_menu1=non_veg_menu1 if mess == 'mess1' else [],
+        non_veg_menu2=non_veg_menu2 if mess == 'mess2' else [],
+        student_name=student_name,
+        mess=mess
+    )
 
 @app.route('/waste', methods=['GET', 'POST'])
 def waste():
@@ -165,6 +198,13 @@ def waste():
     if not meal:
         return "No meal available at the moment."
 
+    exclusions = {'salt', 'sugar', 'ghee', 'podi', 'coffee', 'bbj', 'sprouts', 'curd', 'papad', 'rasam', 'fryums'}
+    veg_items = [
+        item for item in veg_menu_items 
+        if item.lower() not in exclusions 
+        and not any(keyword in item.lower() for keyword in ['banana', 'pickle', 'salad', 'cut fruit', 'sauce', 'chutney', 'juice'])
+    ]
+
     if request.method == 'POST':
         floor = request.form.get('floor')
         waste_amount = request.form.get('waste_amount') 
@@ -176,9 +216,9 @@ def waste():
 
         # Determine menu based on floor
         if floor in ['Ground', 'First']:
-            menu_items = veg_menu_items + [item[0] for item in non_veg_menu1]
+            menu_items = veg_items + [item[0] for item in non_veg_menu1]
         else:
-            menu_items = veg_menu_items + [item[0] for item in non_veg_menu2]
+            menu_items = veg_items + [item[0] for item in non_veg_menu2]
 
         for food_item in menu_items:
             prepared = request.form.get(f'prepared_{food_item}')
@@ -219,16 +259,17 @@ def waste():
         except Exception as e:
             print(f"Error storing waste data: {e}")
             return "An error occurred while submitting waste data."
-
-    return render_template('waste_feedback.html', meal=meal, veg_menu_items=veg_menu_items, 
+    session.pop('_flashes', None)
+    return render_template('waste_feedback.html', meal=meal, veg_menu_items=veg_items, 
                             non_veg_menu1=non_veg_menu1, non_veg_menu2=non_veg_menu2, mess=mess)
 
 @app.route('/add_non_veg_menu', methods=['GET', 'POST'])
 def add_non_veg_menu():
     # Ensure only mess officials can access this page
     if 'role' not in session or session['role'] != 'mess_official':
-        return "Access Denied: Only mess officials can access this page."
-
+        flash ("Access Denied: Only mess officials can access this page",'error')
+        return redirect(url_for('login'))
+    
     mess = session.get('mess')
     if not mess:
         return "Error: Mess information not found."
@@ -270,7 +311,7 @@ def add_non_veg_menu():
                 cursor.execute("""
                     INSERT INTO non_veg_menu_items (menu_id, food_item, cost)
                     VALUES (%s, %s, %s)
-                """, (menu_id, item, int(cost)))
+                """, (menu_id, item, cost))
 
             connection.commit()
 
@@ -300,7 +341,8 @@ def add_non_veg_menu():
 @app.route('/delete_item', methods=['POST'])
 def delete_item():
     if 'role' not in session or session['role'] != 'mess_official':
-        return "Access Denied: Only mess officials can access this page."
+        flash ("Access Denied: Only mess officials can access this page",'error')
+        return redirect(url_for('login'))
 
     mess = session.get('mess')
     if not mess:
@@ -951,6 +993,7 @@ def update_veg_menu():
 @app.route('/student_dashboard')
 def student_dashboard():
     if 'student_id' not in session or session['role'] != 'student':
+        flash("Not yet logged in",'error')
         return redirect(url_for('login'))
     
     student_id = session['student_id']
@@ -988,24 +1031,27 @@ def student_dashboard():
     leaderboard = cursor.fetchall()
 
     # Waste Tracking Insight
+    fr = ['Ground', 'First'] if mess_name == 'mess1' else ['Second', 'Third']
     cursor.execute("""
         SELECT floor, SUM(total_waste) as total_waste
         FROM waste_summary
+        WHERE floor IN (%s, %s)
         GROUP BY floor
-        ORDER BY total_waste DESC
-        LIMIT 3
-    """)
+    """, tuple(fr))
     waste_insight = cursor.fetchall()
 
     # Monthly Average Rating
     cursor.execute("""
-        SELECT s.mess, ROUND(AVG(d.rating), 2) as avg_rating
+        SELECT s.mess, ROUND(AVG(d.rating), 4) as avg_rating
         FROM feedback_details d
         JOIN feedback_summary s ON d.feedback_id = s.feedback_id
-        WHERE MONTH(d.created_at) = MONTH(CURDATE())
+        WHERE MONTH(d.created_at) = MONTH(CURDATE())-1
         GROUP BY s.mess
-    """,)
+    """)
     monthly_avg_ratings = cursor.fetchall()
+
+    # Clamp the avg_rating to be between 1 and 5
+    monthly_avg_ratings = [(mess, max(1, min(avg_rating, 5))) for mess, avg_rating in monthly_avg_ratings]
 
     connection.close()
 

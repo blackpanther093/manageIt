@@ -6,58 +6,59 @@
   <title>Payment Summary</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body {
+      overflow-x: hidden;
+    }
+    .table-container {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans p-8">
+<body class="bg-gray-100 font-sans sm:p-4 p-2">
 
   <!-- Header Section -->
-  <div class="flex justify-between items-center mb-8">
-    <h1 class="text-4xl font-bold text-blue-700 text-center flex-1">Payment Summary - {{ mess_name }}</h1>
-    <button onclick="redirect_dash()" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
+  <div class="flex justify-between items-center mb-4">
+    <button onclick="redirect_dash()" class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
       <i class="ph ph-house mr-2"></i> Dashboard
     </button>
   </div>
 
-  <!-- Flash Messages -->
-  {% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-      <div class="mb-6 w-full max-w-lg">
-        {% for category, message in messages %}
-          {% if 'payment_summary' in category %}
-            <div class="flash-message p-4 rounded-lg text-white {{ 'bg-red-500' if 'error' in category else 'bg-green-500' }} shadow-md">
-              {{ message }}
-            </div>
-          {% endif %}
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+  <!-- Title Section -->
+  <div class="text-center mb-4">
+    <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">Payment Summary - {{ mess_name }}</h1>
+  </div>
 
+  <!-- Payment Data Table -->
   {% if summary_data %}
-    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-      <thead class="bg-blue-200">
-        <tr>
-          <th class="py-3 px-5 border-b">Date</th>
-          <th class="py-3 px-5 border-b">Meal</th>
-          <th class="py-3 px-5 border-b">Total Amount (₹)</th>
-          <th class="py-3 px-5 border-b">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for payment_date, food_item, meal, total_amount in summary_data %}
-          <tr class="hover:bg-gray-100 transition">
-            <td class="py-3 px-5 border-b">{{ payment_date }}</td>
-            <td class="py-3 px-5 border-b">{{ meal }}</td>
-            <td class="py-3 px-5 border-b">₹{{ "%.2f"|format(total_amount) }}</td>
-            <td class="py-3 px-5 border-b">
-              <a href="{{ url_for('view_payment_details', food_item=food_item, payment_date=payment_date, meal=meal) }}" 
-                class="text-blue-500 hover:underline">View Details</a>
-            </td>
+    <div class="bg-white shadow-md rounded-lg mt-4 ml-2 mr-2 table-container">
+      <table class="w-full border-collapse">
+        <thead class="bg-blue-200">
+          <tr>
+            <th class="py-2 px-3 border-b text-left">Date</th>
+            <th class="py-2 px-3 border-b text-left">Meal</th>
+            <th class="py-2 px-3 border-b text-left">Total Amount (₹)</th>
+            <th class="py-2 px-3 border-b text-left">Action</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for payment_date, food_item, meal, total_amount in summary_data %}
+            <tr class="hover:bg-gray-100 transition">
+              <td class="py-2 px-3 border-b">{{ payment_date }}</td>
+              <td class="py-2 px-3 border-b">{{ meal }}</td>
+              <td class="py-2 px-3 border-b">₹{{ "%.2f"|format(total_amount) }}</td>
+              <td class="py-2 px-3 border-b">
+                <a href="{{ url_for('view_payment_details', food_item=food_item, payment_date=payment_date, meal=meal) }}" 
+                  class="text-blue-500 hover:underline">View Details</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p class="text-gray-600 text-lg mt-6">No payment details available.</p>
+    <p class="text-gray-600 text-lg mt-4 text-center">No payment details available.</p>
   {% endif %}
 
   <script>

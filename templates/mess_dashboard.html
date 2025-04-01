@@ -10,31 +10,23 @@
 <body class="bg-gray-100 font-sans">
   <div class="min-h-screen flex flex-col items-center justify-center p-6 relative w-full">
     
-    <!-- Home and Logout Buttons (Prominent) -->
-    <div class="absolute top-6 left-6 flex items-center gap-4">
-      <!-- Home Button -->
+    <!-- Home and Logout Buttons (Responsive) -->
+    <div class="absolute top-6 left-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
       <a href="/" class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 shadow-lg">
         <i class="ph ph-house"></i> Home
       </a>
-      <!-- Logout Button -->
       <a href="/logout" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-700 shadow-lg">
         <i class="ph ph-sign-out"></i> Logout
       </a>
     </div>
 
-    <!-- Profile Section (Top Right) -->
-    <div class="absolute top-6 right-6 flex items-center gap-4">
-      <!-- Notification Icon with Badge -->
+    <!-- Profile Section (Responsive) -->
+    <div class="absolute top-6 right-6 flex flex-col sm:flex-row items-end sm:items-center gap-4">
       <a href="/notifications" class="relative">
-        <svg class="w-8 h-8 {% if notification_count > 0 %} text-yellow-500 {% else %} text-gray-400 {% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.17V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.17c0 .53-.21 1.04-.595 1.425L4 17h5m6 0a3 3 0 01-6 0m6 0H9"></path>
         </svg>
-        {% if notification_count > 0 %}
-          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full px-1">{{ notification_count }}</span>
-        {% endif %}
       </a>
-      
-      <!-- Profile Section -->
       <a href="/profile" class="flex items-center space-x-2 hover:underline">
         <img src="{{ profile_image_url }}" alt="Profile" class="w-10 h-10 rounded-full border border-gray-300" />
         <span class="text-gray-800 font-semibold">{{ username }}</span>
@@ -42,11 +34,13 @@
     </div>
 
     <!-- Welcome Message -->
-    <h1 class="text-3xl font-bold text-blue-600 mb-4">Welcome, {{ mess_name }}!</h1>
-    <p class="text-gray-700 mb-8">Manage your mess activities using the options below.</p>
+    <div class="mt-20 sm:mt-32 text-center">
+      <h1 class="text-3xl font-bold text-blue-600 mt-4 mb-4">Welcome, {{ mess_name }}!</h1>
+      <p class="text-gray-700 mb-8">Manage your mess activities using the options below.</p>
+    </div>
     
     <!-- Action Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl px-4">
       <a href="/add_non_veg_menu" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
         <h2 class="text-xl font-semibold text-blue-600 mb-4">Add or Delete Non-Veg Menu</h2>
         <p class="text-gray-700">Add non-veg meal options and their prices.</p>

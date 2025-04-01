@@ -17,10 +17,10 @@ def get_current_meal(hour=None):
         return "Breakfast"
     elif 11 <= hour < 15:
         return "Lunch"
-    elif 15 <= hour or hour <= 18:
+    elif 15 <= hour < 18:
         return "Snacks"
-    # elif 18 <= hour <= 23:
-        # return "Dinner"
+    elif 18 <= hour <= 23:
+        return "Dinner"
     return None
 
 
@@ -29,70 +29,69 @@ def get_current_meal(hour=None):
 
 def get_menu(date=None, meal=None):
     try:
-        # Set default values
-        if date is None:
-            date = datetime.now().date()
-        if meal is None:
-            meal = get_current_meal()
-            if not meal:
-                print(f"No current meal available for {date}")
-                return None, None, None, None
+        date = date or datetime.now().date()
+        meal = meal or get_current_meal()
+        if not meal:
+            print(f"No current meal available for {date}")
+            return None, [], [], []
 
-        # Determine week type and day
         week_type = 'Odd' if is_odd_week(date) else 'Even'
         day = date.strftime('%A')
-        veg_menu_items = []
-        # Fetch Veg Menu from common database
-        connection = get_db_connection()
-        cursor = connection.cursor()
-        cursor.execute("""
-            SELECT food_item FROM temporary_menu
-            WHERE week_type = %s AND day = %s AND meal = %s
-        """, (week_type, day, meal))
-        temp_menu = cursor.fetchall()
+        veg_menu_items, non_veg_menu1, non_veg_menu2 = [], [], []
 
-        if temp_menu:
-            veg_menu_items = [item[0] for item in temp_menu]
-        else:
-            # Fallback to default menu if no temporary menu exists
-            cursor.execute("""
-                SELECT food_item FROM menu
-                WHERE week_type = %s AND day = %s AND meal = %s
-            """, (week_type, day, meal))
-            # menu_items = [item[0] for item in cursor.fetchall()]
-            veg_menu_items = [item[0] for item in cursor.fetchall()]
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                # Fetch Veg Menu (Temporary or Default)
+                cursor.execute(
+                    """
+                    SELECT food_item FROM temporary_menu
+                    WHERE week_type = %s AND day = %s AND meal = %s
+                    """, (week_type, day, meal)
+                )
+                temp_menu = cursor.fetchall()
+                veg_menu_items = [item[0] for item in temp_menu] if temp_menu else []
+                
+                if not veg_menu_items:
+                    cursor.execute(
+                        """
+                        SELECT food_item FROM menu
+                        WHERE week_type = %s AND day = %s AND meal = %s
+                        """, (week_type, day, meal)
+                    )
+                    veg_menu_items = [item[0] for item in cursor.fetchall()]
+                
+                # Fetch Non-Veg Menu from Mess 1
+                cursor.execute(
+                    """
+                    SELECT food_item, MIN(cost)
+                    FROM non_veg_menu_items
+                    JOIN non_veg_menu_main ON non_veg_menu_items.menu_id = non_veg_menu_main.menu_id
+                    WHERE menu_date = %s AND meal = %s AND mess='mess1'
+                    GROUP BY food_item
+                    """, (date, meal)
+                )
+                non_veg_menu1 = cursor.fetchall()
+                
+                # Fetch Non-Veg Menu from Mess 2
+                cursor.execute(
+                    """
+                    SELECT food_item, MIN(cost)
+                    FROM non_veg_menu_items
+                    JOIN non_veg_menu_main ON non_veg_menu_items.menu_id = non_veg_menu_main.menu_id
+                    WHERE menu_date = %s AND meal = %s AND mess='mess2'
+                    GROUP BY food_item
+                    """, (date, meal)
+                )
+                non_veg_menu2 = cursor.fetchall()
 
-        # Fetch Non-Veg Menu from Mess 1
-        # with get_db_connection() as connection1:
-            # with connection1.cursor() as cursor1:
-        cursor.execute("""
-        SELECT food_item, MIN(cost) 
-        FROM non_veg_menu_items 
-        JOIN non_veg_menu_main ON non_veg_menu_items.menu_id = non_veg_menu_main.menu_id
-        WHERE menu_date = %s AND meal = %s AND mess='mess1'
-        GROUP BY food_item;
-        """, (date, meal))
-        non_veg_menu1 = cursor.fetchall()
-        # print(f"Meal: {meal}, Date: {date}, Non-Veg Menu: {non_veg_menu1}")
-        # Fetch Non-Veg Menu from Mess 2
-        # with get_db_connection('mess2') as connection2:
-            # with connection2.cursor() as cursor2:
-        cursor.execute("""
-            SELECT food_item,MIN(cost) FROM non_veg_menu_items 
-        JOIN non_veg_menu_main
-        ON non_veg_menu_items.menu_id = non_veg_menu_main.menu_id
-        WHERE menu_date = %s AND meal = %s AND mess='mess2'
-        GROUP BY food_item
-        """, (date, meal))
-        non_veg_menu2 = cursor.fetchall()
-        # connection.commit()
-        cursor.close()
-        connection.close()
         return meal, veg_menu_items, non_veg_menu1, non_veg_menu2
 
     except mysql.connector.Error as e:
         print(f"Database error: {e}")
-        return None, None, None, None
+        return None, [], [], []
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None, [], [], []
 
 def avg_rating():
     meal = get_current_meal()

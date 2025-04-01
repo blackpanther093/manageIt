@@ -10,13 +10,14 @@
 <body class="bg-gray-100 font-sans p-8">
 
   <!-- Header Section -->
-  <div class="flex justify-between items-center mb-8">
-    <h1 class="text-4xl font-bold text-blue-700 text-center flex-1">Waste Details for {{ floor }} Floor on {{ waste_date }} ( {{ meal }} )</h1>
-    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
+  <div class="flex justify-between items-center">
+    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md mb-4 sm:mb-0">
       <i class="ph ph-house mr-2"></i> Dashboard
     </a>
   </div>
-
+  <div class="flex items-center justify-center text-center">
+    <h1 class="text-3xl sm:text-4xl mt-8 mb-8 font-bold text-blue-600">Waste Details for {{ floor }} Floor on {{ waste_date }} ({{meal}})</h1>
+  </div>
   {% if waste_data %}
     <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
       <thead>

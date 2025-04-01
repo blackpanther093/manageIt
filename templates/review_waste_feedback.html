@@ -5,34 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Review Waste Feedback</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .graph-container {
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .graph-container h2 {
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+    .graph-container div {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 300px;
+      max-width: 100%;
+      height: auto;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .graph-container img, .graph-container svg {
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans">
-  <div class="min-h-screen flex flex-col items-center justify-center py-8">
-    <h1 class="text-3xl font-bold text-blue-600 mb-8">Review Waste Feedback</h1>
+<body class="bg-gray-100 font-sans p-4 flex flex-col items-center">
 
+  <!-- Header Section -->
+  <div class="w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center mb-8">
+    <a href="/mess_dashboard" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md mb-4 sm:mb-0">
+      Back to Dashboard
+    </a>
+    <h1 class="text-3xl sm:text-4xl font-bold text-blue-600 text-center flex-1">Review Waste Feedback</h1>
+  </div>
+
+  <div class="w-full max-w-6xl bg-white shadow-md rounded-lg p-6 space-y-10 overflow-x-auto">
     {% if no_data %}
-      <p class="text-gray-600 mb-8">No waste data available for the past 30 days.</p>
+      <p class="text-gray-600 text-lg text-center">No waste data available for the past 30 days.</p>
     {% else %}
-      <h2 class="text-xl font-semibold mb-4">Waste Distribution Between Mess1 and Mess2</h2>
-      <div class="mb-8">{{ pie_plot | safe }}</div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div class="graph-container">
+          <h2>Waste Distribution Between Mess1 and Mess2</h2>
+          <div>{{ pie_plot | safe }}</div>
+        </div>
 
-      <h2 class="text-xl font-semibold mb-4">Floor-wise Waste Distribution</h2>
-      <div class="mb-8">{{ floor_pie_plot | safe }}</div>
+        <div class="graph-container">
+          <h2>Floor-wise Waste Distribution</h2>
+          <div>{{ floor_pie_plot | safe }}</div>
+        </div>
 
-      <h2 class="text-xl font-semibold mb-4">Odd Week Waste Trend</h2>
-      <div class="mb-8">{{ odd_plot | safe }}</div>
+        <div class="graph-container">
+          <h2>Odd Week Waste Trend</h2>
+          <div>{{ odd_plot | safe }}</div>
+        </div>
 
-      <h2 class="text-xl font-semibold mb-4">Even Week Waste Trend</h2>
-      <div class="mb-8">{{ even_plot | safe }}</div>
+        <div class="graph-container">
+          <h2>Even Week Waste Trend</h2>
+          <div>{{ even_plot | safe }}</div>
+        </div>
 
-      <h2 class="text-xl font-semibold mb-4">7-Day Moving Average of Waste</h2>
-      <div class="mb-8">{{ moving_avg_plot | safe }}</div>
+        <div class="graph-container">
+          <h2>7-Day Moving Average of Waste</h2>
+          <div>{{ moving_avg_plot | safe }}</div>
+        </div>
 
-      <h2 class="text-xl font-semibold mb-4">Scatter Plot of Food Waste</h2>
-      <div>{{ scatter_plot | safe }}</div>
+        <div class="graph-container">
+          <h2>Scatter Plot of Food Waste</h2>
+          <div>{{ scatter_plot | safe }}</div>
+        </div>
+      </div>
     {% endif %}
-
-    <a href="/admin_dashboard" class="mt-8 mb-8 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Back to Dashboard</a>
   </div>
 </body>
 </html>
