@@ -653,7 +653,7 @@ def review_waste_feedback():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('home'))
 
 # Notifications Route
 @app.route('/notifications')
@@ -1017,7 +1017,7 @@ def student_dashboard():
     # Meal Reminder
     cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s", (student_id, mess_name))
     feedback_given = set(row[0] for row in cursor.fetchall())
-    if (student_id,) in feedback_given:
+    if (student_id) in feedback_given:
         feedback_status = "Feedback Submitted"
     else:
         feedback_status = "Feedback Pending"
@@ -1046,7 +1046,7 @@ def student_dashboard():
 
     # Monthly Average Rating
     cursor.execute("""
-        SELECT s.mess, ROUND(AVG(d.rating), 4) as avg_rating
+        SELECT s.mess, ROUND(AVG(d.rating), 2) as avg_rating
         FROM feedback_details d
         JOIN feedback_summary s ON d.feedback_id = s.feedback_id
         WHERE MONTH(d.created_at) = MONTH(CURDATE())-1

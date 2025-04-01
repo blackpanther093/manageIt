@@ -1,16 +1,22 @@
 from db import get_db_connection
-from datetime import datetime
+from datetime import datetime, timezone
 import pytz
 import mysql.connector
 # from utils import is_odd_week, get_current_meal
 
+def get_fixed_time():
+    """Always return UTC time and convert to IST."""
+    utc_now = datetime.now(timezone.utc)  # Ensure we use UTC explicitly
+    ist = pytz.timezone("Asia/Kolkata")
+    return utc_now.astimezone(ist)
+
 def is_odd_week(date=None):
     """Determine if the given date falls in an odd or even week, based on 2025-02-02."""
-    utc = pytz.utc
-    ist = pytz.timezone("Asia/Kolkata")
+    # utc = pytz.utc
+    # ist = pytz.timezone("Asia/Kolkata")
 
     if date is None:
-        date = datetime.now(utc).astimezone(ist).date()  # Get IST date from UTC
+        date = get_fixed_time.date()  # Get IST date from UTC
 
     start_date = datetime(2025, 2, 2).date()
     days_difference = (date - start_date).days
@@ -18,11 +24,11 @@ def is_odd_week(date=None):
 
 def get_current_meal(hour=None):
     """Return the current meal based on IST time."""
-    utc = pytz.utc
-    ist = pytz.timezone("Asia/Kolkata")
+    # utc = pytz.utc
+    # ist = pytz.timezone("Asia/Kolkata")
 
     if hour is None:
-        hour = datetime.now(utc).astimezone(ist).hour  # Convert UTC to IST
+        hour = get_fixed_time().hour  # Convert UTC to IST
 
     if 6 <= hour < 11:
         return "Breakfast"
@@ -36,12 +42,12 @@ def get_current_meal(hour=None):
 
 def get_menu(date=None, meal=None):
     """Fetch menu details based on the date and meal."""
-    utc = pytz.utc
-    ist = pytz.timezone("Asia/Kolkata")
+    # utc = pytz.utc
+    # ist = pytz.timezone("Asia/Kolkata")
 
     try:
         # Get the current IST date & meal if not provided
-        date = date or datetime.now(utc).astimezone(ist).date()
+        date = date or get_fixed_time.date()
         meal = meal or get_current_meal()
 
         if not meal:
