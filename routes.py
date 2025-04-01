@@ -128,7 +128,7 @@ def feedback():
 
             if feedback_exists:
                 flash("You have already submitted feedback for this meal today.", "error")
-                return redirect(url_for('feedback'))
+                return redirect(url_for('student_dashboard'))
 
             # Collect Feedback Data
             food_ratings = {}
@@ -167,7 +167,7 @@ def feedback():
             connection.close()
 
             flash("Feedback submitted successfully!", "success")
-            return redirect(url_for('feedback'))
+            return redirect(url_for('student_dashboard'))
 
         except Exception as e:
             connection.rollback()
@@ -188,17 +188,20 @@ def feedback():
 def waste():
     # Ensure only mess officials can access this page
     if 'role' not in session or session['role'] != 'mess_official':
-        return "Access Denied: Only mess officials can access this page."
-
+        flash ("Access Denied: Only mess officials can access this page.",'error')
+        return redirect(url_for('login'))
+    
     mess = session.get('mess')
     if not mess:
-        return "Error: Mess information not found."
-
+        flash ("Error: Mess information not found.",'error')
+        return redirect(url_for('login'))
+    
     meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
     if not meal:
-        return "No meal available at the moment."
+        flash( "No meal available at the moment.",'error')
+        return redirect(url_for('mess_dashboard'))
 
-    exclusions = {'salt', 'sugar', 'ghee', 'podi', 'coffee', 'bbj', 'sprouts', 'curd', 'papad', 'rasam', 'fryums'}
+    exclusions = {'salt', 'sugar', 'ghee', 'podi', 'coffee', 'bbj', 'sprouts', 'curd', 'papad', 'rasam', 'fryums', 'milk', 'tea'}
     veg_items = [
         item for item in veg_menu_items 
         if item.lower() not in exclusions 
@@ -209,7 +212,8 @@ def waste():
         floor = request.form.get('floor')
         waste_amount = request.form.get('waste_amount') 
         if floor not in ['Ground', 'First', 'Second', 'Third']:
-            return "Invalid floor."
+            flash ("Invalid floor.",'error')
+            return redirect(url_for('waste'))
 
         prepared_amounts = {}
         leftover_amounts = {}
@@ -229,12 +233,14 @@ def waste():
                     prepared_amounts[food_item] = int(prepared)
                     leftover_amounts[food_item] = int(leftover)
                 except ValueError:
-                    return f"Invalid input for {food_item}. Please enter numbers only."
-
+                    flash (f"Invalid input for {food_item}. Please enter numbers only.",'error')
+                    return redirect(url_for('waste'))
+                
         if not prepared_amounts:
-            return "No valid data submitted."
-
-        try:
+            flash ("No valid data submitted.",'error')
+            return redirect(url_for('waste'))
+        
+        try:    
             connection = get_db_connection()
             cursor = connection.cursor()
 
@@ -255,11 +261,14 @@ def waste():
             connection.commit()
             cursor.close()
             connection.close()
-            return "Waste data submitted successfully!"
+            flash ("Waste data submitted successfully!",'success')
+            return redirect(url_for('mess_dashboard'))
         except Exception as e:
             print(f"Error storing waste data: {e}")
-            return "An error occurred while submitting waste data."
-    session.pop('_flashes', None)
+            flash ("An error occurred while submitting waste data.",'error')
+            return redirect(url_for('waste'))
+        
+    # session.pop('_flashes', None)
     return render_template('waste_feedback.html', meal=meal, veg_menu_items=veg_items, 
                             non_veg_menu1=non_veg_menu1, non_veg_menu2=non_veg_menu2, mess=mess)
 
@@ -272,13 +281,15 @@ def add_non_veg_menu():
     
     mess = session.get('mess')
     if not mess:
-        return "Error: Mess information not found."
+        flash ("Error: Mess information not found.",'error')
+        return redirect(url_for(login))
 
     # Get meal using the existing function
     meal, _, _, _ = get_menu()
     if not meal:
-        return "No meal available at the moment."
-            
+        flash ("No meal available at the moment.",'error')
+        return redirect(url_for(home))
+        
         # prvs_item = []
     try:
         connection = get_db_connection()
@@ -297,7 +308,8 @@ def add_non_veg_menu():
             costs = request.form.getlist('cost[]')
 
             if not food_items or not costs or len(food_items) != len(costs):
-                return "Invalid input. Ensure all fields are filled."
+                flash ("Invalid input. Ensure all fields are filled.",'error')
+                return redirect(url_for(add_non_veg_menu))
        
             # Insert into non_veg_menu_main
             cursor.execute("""
@@ -334,7 +346,8 @@ def add_non_veg_menu():
 
     except Exception as e:
         print(f"Error adding non-veg menu: {e}")
-        return "An error occurred while adding the menu."
+        flash( "An error occurred while adding the menu.",'error')
+        return redirect(url_for(add_non_veg_menu))
 
     return render_template('add_non_veg_menu.html', meal=meal, mess=mess,  previous_items=previous_items)
 
@@ -648,8 +661,9 @@ def review_waste_feedback():
 
     except Exception as e:
         print(f"Error: {e}")
-        return f"An error occurred while fetching waste data: {e}"
-
+        flash (f"An error occurred while fetching waste data: {e}", 'error')
+        return redirect(url_for('mess_dashboard'))
+    
 @app.route('/logout')
 def logout():
     session.clear()

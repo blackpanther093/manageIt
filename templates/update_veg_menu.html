@@ -31,8 +31,12 @@
     {% if messages %}
       <div class="mb-6 w-full max-w-lg">
         {% for category, message in messages %}
-          {% if 'update_veg_menu' in category %}
-            <div class="flash-message p-4 rounded-lg text-white {{ 'bg-red-500' if 'error' in category else 'bg-green-500' }} shadow-md">
+          {% if category == 'error' %}
+            <div class="flash-message p-4 rounded-lg text-white bg-red-500 shadow-md">
+              {{ message }}
+            </div>
+          {% elif category == 'success' %}
+            <div class="flash-message p-4 rounded-lg text-white bg-green-500 shadow-md">
               {{ message }}
             </div>
           {% endif %}

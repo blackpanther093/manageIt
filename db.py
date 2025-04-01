@@ -18,12 +18,16 @@ DB_NAME = os.getenv('DB_NAME')
 
 def get_db_connection():
     try:
-        return mysql.connector.connect(
+        connection = mysql.connector.connect(
             host=DB_HOST,
             user=DB_USER,
             password=DB_PASSWORD,
             database=DB_NAME
         )
+        cursor = connection.cursor()
+        cursor.execute("SET time_zone = '+05:30';")  # Set time zone for this session
+        cursor.close()
+        return connection
     except mysql.connector.Error as e:
         print(f"Error connecting to database {DB_NAME}: {e}")
         return None

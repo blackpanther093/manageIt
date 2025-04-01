@@ -6,6 +6,21 @@
   <title>Mess Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        display: none;
+      }
+    }
+
+    .flash-message {
+      animation: floatUp 0.5s ease-out, fadeOut 1s 5s forwards;
+    }
+  </style>  
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="min-h-screen flex flex-col items-center justify-center p-6 relative w-full">
@@ -32,6 +47,21 @@
         <span class="text-gray-800 font-semibold">{{ username }}</span>
       </a>
     </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div id="flash-container" class="w-full max-w-lg mb-6">
+          {% for category, message in messages %}
+            {% if category == 'success' %}
+              <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 bg-green-500">{{ message }}</div>
+            {% elif category == 'error' %}
+              <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 bg-red-500">{{ message }}</div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
     <!-- Welcome Message -->
     <div class="mt-20 sm:mt-32 text-center">
@@ -63,5 +93,19 @@
       </a>
     </div>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Select all flash messages
+      const flashMessages = document.querySelectorAll('.flash-message');
+      
+      // Loop through all flash messages
+      flashMessages.forEach(function(message) {
+        setTimeout(function() {
+          message.classList.add('fade-out'); // Apply the fade-out class after 5 seconds
+        }, 5000); // Wait for 5 seconds before starting the fade-out effect
+      });
+    });
+  </script>
 </body>
 </html>

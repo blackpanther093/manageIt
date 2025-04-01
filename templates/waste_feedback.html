@@ -26,14 +26,16 @@
       <i class="ph ph-house mr-2"></i> Dashboard
     </a>
 
-    <!-- Flash Messages -->
+    <!-- Flash Messages (Only Success and Error) -->
     {% with messages = get_flashed_messages(with_categories=True) %}
       {% if messages %}
-        <div class="absolute top-16 right-4 space-y-2 z-50">
+        <div id="flash-container" class="w-full max-w-lg mb-6">
           {% for category, message in messages %}
-            <div class="flash-message p-3 rounded-lg text-white text-sm {{ 'bg-red-500' if category == 'error' else 'bg-green-500' }}">
-              {{ message }}
-            </div>
+            {% if category in ['success', 'error'] %}
+              <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }}">
+                {{ message }}
+              </div>
+            {% endif %}
           {% endfor %}
         </div>
       {% endif %}
@@ -115,17 +117,6 @@
           nonVegSection.classList.add('hidden');
         }
       }
-    }
-
-    function validateForm() {
-      const inputs = document.querySelectorAll('input[required]');
-      for (const input of inputs) {
-        if (!input.value.trim()) {
-          alert('All fields are required. Please fill them correctly.');
-          return false;
-        }
-      }
-      return true;
     }
   </script>
 

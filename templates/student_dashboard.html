@@ -36,6 +36,28 @@
       position: relative;
     }
 
+    .flash-message {
+      animation: fadeInOut 3s ease-in-out;
+      padding: 10px;
+      border-radius: 8px;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    @keyframes fadeInOut {
+      0% {
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
@@ -45,6 +67,24 @@
     <h1 class="text-2xl font-bold">Mess Management System</h1>
     <a href="/logout" class="bg-white text-blue-600 px-6 py-2 rounded-lg shadow-lg hover:bg-gray-100 transition duration-300">Logout</a>
   </header>
+
+  <!-- Flash Messages Section -->
+  <div class="p-6">
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div class="space-y-4">
+          {% for category, message in messages %}
+            <div class="flash-message 
+              {% if category == 'success' %} bg-green-500
+              {% elif category == 'error' %} bg-red-500
+              {% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
 
   <!-- Main Content Section -->
   <main class="p-6 space-y-8">
