@@ -79,7 +79,8 @@
       </label>
 
       <!-- Submit Button -->
-      <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 w-full mt-6">
+      <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 w-full mt-6" 
+        {% if not food_items %} disabled class="opacity-50 cursor-not-allowed" {% endif %}>
         Submit Payment
       </button>
     </form>

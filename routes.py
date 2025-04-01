@@ -100,7 +100,7 @@ def feedback():
     mess = session['mess']
 
     # Select the appropriate database
-    db_name = 'mess1' if mess == 'mess1' else 'mess2'
+    # db_name = 'mess1' if mess == 'mess1' else 'mess2'
 
     meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
     if not meal:
@@ -116,7 +116,7 @@ def feedback():
 
     if request.method == 'POST':
         try:
-            connection = get_db_connection(db_name)
+            connection = get_db_connection()
             cursor = connection.cursor()
 
             # Check if feedback already exists
@@ -149,9 +149,9 @@ def feedback():
 
             # Insert into feedback_summary
             cursor.execute("""
-                INSERT INTO feedback_summary (s_id, feedback_date, meal)
-                VALUES (%s, CURDATE(), %s)
-            """, (student_id, meal))
+                INSERT INTO feedback_summary (s_id, feedback_date, meal, mess)
+                VALUES (%s, CURDATE(), %s, %s)
+            """, (student_id, meal, mess))
             feedback_id = cursor.lastrowid
 
             # Insert into feedback_details
@@ -235,7 +235,7 @@ def waste():
             return "No valid data submitted."
 
         try:
-            connection = get_db_connection('mess_management')
+            connection = get_db_connection()
             cursor = connection.cursor()
 
             # Insert into waste_summary
@@ -435,7 +435,7 @@ def add_payment():
     if 'mess_id' not in session or session.get('role') != 'mess_official':
         return redirect(url_for('login'))
 
-    mess_name = session.get('mess')
+    mess_name = session['mess']
     meal = get_current_meal()
 
     if request.method == 'POST':
@@ -448,11 +448,11 @@ def add_payment():
             with get_db_connection() as connection_main, connection_main.cursor() as cursor_main:
                 cursor_main.execute("SELECT mess FROM student WHERE s_id = %s", (s_id,))
                 student_data = cursor_main.fetchone()
-
+                
                 if not student_data or student_data[0] != mess_name:
                     flash("Invalid student ID or student not from your mess.", "error")
                     return redirect(url_for('add_payment'))
-
+                cursor_main.fetchall()
                 # Fetch amount for the selected food item
                 # with get_db_connection() as connection, connection.cursor() as cursor:
                 cursor_main.execute("""
@@ -460,23 +460,24 @@ def add_payment():
                     JOIN non_veg_menu_main m ON n.menu_id = m.menu_id
                     WHERE n.food_item = %s AND m.menu_date = CURDATE() AND m.meal = %s AND mess = %s
                 """, (food_item, meal, mess_name))
-                amount_data = cursor.fetchone()
+                amount_data = cursor_main.fetchone()
 
                 if not amount_data:
                     flash("Invalid food item selected.", "error")
                     return redirect(url_for('add_payment'))
 
                 amount = amount_data[0]
-
+                cursor_main.fetchall()
                 # Insert payment record
                 cursor_main.execute("""
-                    INSERT INTO payment (s_id, mess, meal, food_item, payment_date, amount, payment_mode)
-                    VALUES (%s, %s, %s, %s, CURDATE(), %s, %s)
+                    INSERT INTO payment (s_id, mess, meal, payment_date, food_item, amount, payment_mode)
+                    VALUES (%s, %s, %s, CURDATE(), %s, %s, %s)
                 """, (s_id, mess_name, meal, food_item, amount, payment_mode))
 
                 connection_main.commit()
-                connection_main.close()
                 cursor_main.close()
+                connection_main.close()
+                
                 flash("Payment details entered successfully!", "success")
                 return redirect(url_for('add_payment'))
 
@@ -496,6 +497,9 @@ def add_payment():
                 WHERE m.menu_date = CURDATE() AND m.meal = %s AND m.mess = %s
             """, (meal, mess_name))
             food_items = cursor.fetchall()
+            connection.commit()
+            cursor.close()
+            connection.close()
             if not food_items:
                 print("No food items found for the current meal.")
     except Exception as e:
