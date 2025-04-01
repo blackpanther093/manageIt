@@ -1,18 +1,29 @@
 from db import get_db_connection
 from datetime import datetime
+import pytz
 import mysql.connector
 # from utils import is_odd_week, get_current_meal
 
 def is_odd_week(date=None):
+    """Determine if the given date falls in an odd or even week, based on 2025-02-02."""
+    utc = pytz.utc
+    ist = pytz.timezone("Asia/Kolkata")
+
     if date is None:
-        date = datetime.now().date()
+        date = datetime.now(utc).astimezone(ist).date()  # Get IST date from UTC
+
     start_date = datetime(2025, 2, 2).date()
     days_difference = (date - start_date).days
     return (days_difference // 7) % 2 == 0
 
 def get_current_meal(hour=None):
+    """Return the current meal based on IST time."""
+    utc = pytz.utc
+    ist = pytz.timezone("Asia/Kolkata")
+
     if hour is None:
-        hour = datetime.now().hour
+        hour = datetime.now(utc).astimezone(ist).hour  # Convert UTC to IST
+
     if 6 <= hour < 11:
         return "Breakfast"
     elif 11 <= hour < 15:
@@ -23,14 +34,16 @@ def get_current_meal(hour=None):
         return "Dinner"
     return None
 
-
-# from datetime import datetime
-# from utils import get_db_connection, is_odd_week, get_current_meal
-
 def get_menu(date=None, meal=None):
+    """Fetch menu details based on the date and meal."""
+    utc = pytz.utc
+    ist = pytz.timezone("Asia/Kolkata")
+
     try:
-        date = date or datetime.now().date()
+        # Get the current IST date & meal if not provided
+        date = date or datetime.now(utc).astimezone(ist).date()
         meal = meal or get_current_meal()
+
         if not meal:
             print(f"No current meal available for {date}")
             return None, [], [], []
@@ -39,8 +52,11 @@ def get_menu(date=None, meal=None):
         day = date.strftime('%A')
         veg_menu_items, non_veg_menu1, non_veg_menu2 = [], [], []
 
+        # Fetch menu from database
+        from utils import get_db_connection
         with get_db_connection() as connection:
             with connection.cursor() as cursor:
+                
                 # Fetch Veg Menu (Temporary or Default)
                 cursor.execute(
                     """
@@ -59,7 +75,7 @@ def get_menu(date=None, meal=None):
                         """, (week_type, day, meal)
                     )
                     veg_menu_items = [item[0] for item in cursor.fetchall()]
-                
+
                 # Fetch Non-Veg Menu from Mess 1
                 cursor.execute(
                     """
@@ -71,7 +87,7 @@ def get_menu(date=None, meal=None):
                     """, (date, meal)
                 )
                 non_veg_menu1 = cursor.fetchall()
-                
+
                 # Fetch Non-Veg Menu from Mess 2
                 cursor.execute(
                     """

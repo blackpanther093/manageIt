@@ -4,5 +4,6 @@ mysql-connector-python
 Faker
 plotly
 pandas
+pytz
 # Web Server
 gunicorn
