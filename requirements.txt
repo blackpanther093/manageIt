@@ -2,6 +2,7 @@ Flask
 python-dotenv
 mysql-connector-python
 Faker
-datetime
 plotly
 pandas
+# Web Server
+gunicorn
