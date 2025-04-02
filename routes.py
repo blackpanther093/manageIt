@@ -1008,6 +1008,43 @@ def update_veg_menu():
 
     return render_template('update_veg_menu.html', week_type=week_type, day=day, meal=meal)
 
+@app.route('/restore_default_veg_menu', methods=['POST'])
+def restore_default_veg_menu():
+    if 'admin_id' not in session:
+        flash('Unauthorized access. Please log in.', 'error')
+        return redirect(url_for('login'))
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        week_type = 'Odd' if is_odd_week() else 'Even'
+        day = datetime.now().strftime('%A')
+        meal = get_current_meal()
+
+        # print(f"Restoring default menu for {week_type} - {day} - {meal}")  # Debugging
+        cursor.execute('''
+            DELETE FROM temporary_menu WHERE week_type=%s AND day=%s AND meal=%s
+        ''', (week_type, day, meal))
+
+        if cursor.rowcount > 0:
+            flash('Veg menu restored to default.', 'success')
+            # print("Menu restored successfully.")  # Debugging
+        else:
+            flash('No temporary menu found to restore.', 'info')
+            # print("No temporary menu found.")  # Debugging
+
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        flash(f'Error: {e}', 'error')
+        print(f"Error: {e}")  # Debugging
+    finally:
+        cursor.close()
+        connection.close()
+
+    return redirect(url_for('update_veg_menu'))
+
 @app.route('/student_dashboard')
 def student_dashboard():
     if 'student_id' not in session or session['role'] != 'student':
@@ -1016,6 +1053,7 @@ def student_dashboard():
     
     student_id = session['student_id']
     mess_name = session['mess']
+    meal = get_current_meal()
     connection = get_db_connection()
     cursor = connection.cursor()
 
@@ -1029,7 +1067,7 @@ def student_dashboard():
         greeting = 'Good Evening'
 
     # Meal Reminder
-    cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s", (student_id, mess_name))
+    cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s AND meal = %s", (student_id, mess_name, meal))
     feedback_given = set(row[0] for row in cursor.fetchall())
     if (student_id) in feedback_given:
         feedback_status = "Feedback Submitted"
@@ -1063,14 +1101,17 @@ def student_dashboard():
         SELECT s.mess, ROUND(AVG(d.rating), 2) as avg_rating
         FROM feedback_details d
         JOIN feedback_summary s ON d.feedback_id = s.feedback_id
-        WHERE MONTH(d.created_at) = MONTH(CURDATE())-1
-        GROUP BY s.mess
+        WHERE d.created_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+        AND d.created_at < CURDATE()
+        GROUP BY s.mess;
     """)
     monthly_avg_ratings = cursor.fetchall()
-
+    for mess, avg in monthly_avg_ratings:
+        print(mess)
+        print(avg)
+    if not monthly_avg_ratings:
+        print("No ratings available for last month.")
     # Clamp the avg_rating to be between 1 and 5
-    monthly_avg_ratings = [(mess, max(1, min(avg_rating, 5))) for mess, avg_rating in monthly_avg_ratings]
-
     connection.close()
 
     return render_template('student_dashboard.html',

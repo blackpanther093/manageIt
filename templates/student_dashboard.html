@@ -19,7 +19,6 @@
       justify-content: center;
       position: relative;
     }
-
     .progress-circle::before {
       content: '';
       width: 120px;
@@ -28,7 +27,6 @@
       border-radius: 50%;
       position: absolute;
     }
-
     .progress-text {
       font-size: 24px;
       font-weight: bold;
@@ -69,7 +67,7 @@
   </header>
 
   <!-- Flash Messages Section -->
-  <div class="p-6">
+  <div class="p-6" id="flash-container">
     {% with messages = get_flashed_messages(with_categories=True) %}
       {% if messages %}
         <div class="space-y-4">
@@ -85,7 +83,6 @@
       {% endif %}
     {% endwith %}
   </div>
-
   <!-- Main Content Section -->
   <main class="p-6 space-y-8">
 
@@ -109,13 +106,16 @@
     <!-- Ratings Section -->
     <!-- Mess Ratings -->
     <section class="p-8">
-      <h2 class="text-xl font-semibold mb-4">Monthly Ratings</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {% for mess_name, avg_rating in monthly_avg_ratings %}
+      <h2 class="text-xl font-semibold mb-4">Last Month Ratings</h2>
+      <div class="flex flex-wrap justify-center gap-8">
+        {% for mess, avg_rating in monthly_avg_ratings %}
           <div class="flex flex-col items-center">
-            <h3 class="text-lg font-medium mb-2">{{ mess_name }} Rating</h3>
-            <div class="progress-circle" style="--percentage: calc({{ avg_rating }} / 5 * 100)">
-              <span class="progress-text">{{ avg_rating }}/5</span>
+            <h3 class="text-lg font-medium mb-2">{{ mess }} Rating</h3>
+            <div class="progress-circle" 
+              style="--percentage: calc({{ avg_rating if avg_rating is not none else 0 }} / 5 * 100)">
+              <span class="progress-text">
+                {{ avg_rating if avg_rating is not none else "N/A" }}/5
+              </span>
             </div>
           </div>
         {% endfor %}
@@ -159,5 +159,15 @@
     <p>&copy; 2025 Mess Management System | All rights reserved.</p>
   </footer>
 
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(() => {
+        document.querySelectorAll(".flash-message").forEach((msg) => {
+          msg.style.opacity = "0";
+          setTimeout(() => msg.remove(), 1000); // Remove after fade out
+        });
+      }, 5000);
+    });
+  </script>
 </body>
 </html>
