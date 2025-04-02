@@ -7,32 +7,33 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
-<body class="bg-gray-100 font-sans p-8">
+<body class="bg-gray-900 font-sans p-8">
 
   <!-- Header Section -->
   <div class="flex justify-between items-center">
-    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md mb-4 sm:mb-0">
+    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 shadow-md mb-4 sm:mb-0">
       <i class="ph ph-house mr-2"></i> Dashboard
     </a>
   </div>
   <div class="flex items-center justify-center text-center">
-    <h1 class="text-3xl sm:text-4xl mt-8 mb-8 font-bold text-blue-600">Waste Details for {{ floor }} Floor on {{ waste_date }}</h1>
+    <h1 class="text-3xl sm:text-4xl mt-8 mb-8 font-bold text-white">Waste Details for {{ floor }} Floor on {{ waste_date }}</h1>
   </div>
   {% if waste_data %}
-    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+  <div class="w-full overflow-x-auto rounded-lg">
+    <table class="min-w-full bg-gray-700 shadow-md">
       <thead>
-        <tr class="bg-blue-200">
-          <th class="py-3 px-5 border-b">Meal</th>
-          <th class="py-3 px-5 border-b">Total Waste (Kg)</th>
-          <th class="py-3 px-5 border-b">Actions</th>
+        <tr class="bg-yellow-400">
+          <th class="py-3 px-5 border-b text-yellow-900">Meal</th>
+          <th class="py-3 px-5 border-b text-yellow-900">Total Waste (Kg)</th>
+          <th class="py-3 px-5 border-b text-yellow-900">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for meal, total_waste in waste_data %}
-          <tr class="hover:bg-gray-100 transition">
-            <td class="py-3 px-5 border-b">{{ meal }}</td>
-            <td class="py-3 px-5 border-b">{{ total_waste }} Kg</td>
-            <td class="py-3 px-5 border-b">
+          <tr class="hover:bg-gray-800 transition">
+            <td class="py-3 px-5 border-b text-white">{{ meal }}</td>
+            <td class="py-3 px-5 border-b text-white">{{ total_waste }} Kg</td>
+            <td class="py-3 px-5 border-b text-white">
               <a href="{{url_for('timely_waste_detail', floor=floor, waste_date=waste_date, meal=meal)}}" class="text-blue-500 hover:underline">View Full Waste Feedback</a>
             </td>
           </tr>
@@ -40,7 +41,8 @@
       </tbody>
     </table>
   {% else %}
-    <p class="text-gray-600 text-lg mt-6">No waste data available for Floor {{ floor }} on {{ waste_date }}.</p>
+    <p class="text-white text-lg mt-6">No waste data available for Floor {{ floor }} on {{ waste_date }}.</p>
+  </div>
   {% endif %}
 
   <!-- Back to Waste Summary Button -->

@@ -1,7 +1,7 @@
 from flask import Flask,render_template, request, redirect, session, url_for, flash
 # from flask import Blueprint
 # from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, JWTManager
-from utils import get_menu, avg_rating, get_current_meal, is_odd_week
+from utils import get_menu, avg_rating, get_current_meal, is_odd_week, get_fixed_time
 from db import get_db_connection
 from datetime import datetime
 # from app import app  
@@ -44,7 +44,7 @@ def login():
         cursor = connection.cursor()
 
         # Check if the user is a student
-        cursor.execute("SELECT s_id, name, mess FROM student WHERE s_id = %s AND password = %s", (id, password))
+        cursor.execute("SELECT s_id, name, mess FROM student WHERE BINARY s_id = %s AND BINARY password = %s", (id, password))
         student = cursor.fetchone()
 
         if student:
@@ -57,7 +57,7 @@ def login():
             return redirect(url_for('student_dashboard'))
 
         # Check if the user is a mess official
-        cursor.execute("SELECT mess_id, mess FROM mess_data WHERE mess_id = %s AND password = %s", (id, password))
+        cursor.execute("SELECT mess_id, mess FROM mess_data WHERE BINARY mess_id = %s AND BINARY password = %s", (id, password))
         mess_official = cursor.fetchone()
 
         if mess_official:
@@ -69,7 +69,7 @@ def login():
             return redirect(url_for('mess_dashboard'))
 
     # Check if the user is an admin
-        cursor.execute("SELECT admin_id, username FROM admin WHERE admin_id = %s AND password = %s", (id, password))
+        cursor.execute("SELECT admin_id, username FROM admin WHERE BINARY admin_id = %s AND BINARY password = %s", (id, password))
         admin = cursor.fetchone()
 
         if admin:
@@ -93,6 +93,7 @@ def login():
 def feedback():
     # Ensure student is logged in
     if 'student_id' not in session:
+        flash("Invalid login",'error')
         return redirect(url_for('login'))
 
     student_id = session['student_id']
@@ -101,11 +102,14 @@ def feedback():
 
     # Select the appropriate database
     # db_name = 'mess1' if mess == 'mess1' else 'mess2'
+    current_hour = get_fixed_time().hour
 
     meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
+    if((meal == 'Breakfast' and current_hour < 7) or (meal == 'Lunch' and current_hour < 12) or (meal == 'Snacks' and current_hour < 17) or (meal == 'Dinner' and current_hour < 19)):
+        meal = None
     if not meal:
         flash("No meal available at the moment.", "error")
-        return redirect(url_for('feedback'))
+        return redirect(url_for('student_dashboard'))
 
     exclusions = {'salt', 'sugar', 'ghee', 'podi', 'coffee', 'bbj', 'sprouts', 'curd', 'papad'}
     veg_items = [
@@ -196,7 +200,11 @@ def waste():
         flash ("Error: Mess information not found.",'error')
         return redirect(url_for('login'))
     
+    current_hour = get_fixed_time().hour
+
     meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
+    if((meal == 'Breakfast' and current_hour < 9) or (meal == 'Lunch' and current_hour < 14) or (meal == 'Snacks' and current_hour < 18) or (meal == 'Dinner' and current_hour < 21)):
+        meal = None
     if not meal:
         flash( "No meal available at the moment.",'error')
         return redirect(url_for('mess_dashboard'))
@@ -389,9 +397,10 @@ def delete_item():
 @app.route('/mess_dashboard')
 def mess_dashboard():
     if 'role' not in session or session.get('role') != 'mess_official':
-        return "Access Denied: Only mess officials can access this page."
+        flash ("Access Denied: Only mess officials can access this page.",'error')
 
     if 'mess_id' not in session:
+        flash("Access Denied, Login again",'error')
         return redirect(url_for('login'))
 
     mess_id = session['mess_id']
@@ -402,7 +411,7 @@ def mess_dashboard():
     # Fetch Notification Count
     notification_count = 0
     try:
-        connection = get_db_connection(mess_name)
+        connection = get_db_connection()
         cursor = connection.cursor()
 
         # Check for High Waste Notifications
@@ -617,7 +626,7 @@ def review_waste_feedback():
         connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
 
-        # Fetch waste data
+        # Fetch waste data for the last 30 days
         cursor.execute("""
             SELECT w.waste_date, w.floor, w.meal, wd.food_item, wd.leftover_amount, w.total_waste
             FROM waste_summary w
@@ -625,45 +634,95 @@ def review_waste_feedback():
             WHERE w.waste_date >= CURDATE() - INTERVAL 30 DAY;
         """)
         waste_data = cursor.fetchall()
-        connection.close()
-
+        
         if not waste_data:
+            connection.close()
             return render_template('review_waste_feedback.html', no_data=True)
-
+        
+        # Convert data to DataFrame for analysis
         df = pd.DataFrame(waste_data)
-
-        # Pie Chart for Waste Distribution (Mess1 vs Mess2)
+        
+        # Convert waste_date to Pandas Timestamp and remove timezone info
+        df['waste_date'] = pd.to_datetime(df['waste_date']).dt.tz_localize(None)
+        
+        # Determine mess based on floor names
         df['mess'] = df['floor'].apply(lambda x: 'mess1' if x in ['Ground', 'First'] else 'mess2')
-        pie_fig = px.pie(df, names='mess', values='leftover_amount', title='Waste Distribution Between Mess1 and Mess2')
-        pie_plot = pie_fig.to_html(full_html=False)
-
-        # Drill-Down Pie Chart for Floor-wise Waste Distribution
+        
+        # Total Waste Comparison Pie Chart (Mess1 vs Mess2)
+        total_waste_pie_fig = px.pie(df, names='mess', values='total_waste', title='Total Waste Distribution (Mess1 vs Mess2)')
+        total_waste_pie = total_waste_pie_fig.to_html(full_html=False)
+        
+        # Pie Chart for Floor-wise Waste Distribution (using leftover_amount)
         floor_pie_fig = px.pie(df, names='floor', values='leftover_amount', title='Floor-wise Waste Distribution')
         floor_pie_plot = floor_pie_fig.to_html(full_html=False)
-
-        # Line Chart for Odd and Even Week Waste Trend
-        df['week_type'] = df['waste_date'].apply(lambda x: 'Odd' if is_odd_week(x) else 'Even')
+        
+        # Line Charts for Odd and Even Week Waste Trends using x.date() for is_odd_week()
+        df['week_type'] = df['waste_date'].apply(lambda x: 'Odd' if is_odd_week(x.date()) else 'Even')
         odd_fig = px.line(df[df['week_type'] == 'Odd'], x='waste_date', y='total_waste', color='floor', title='Odd Week Waste Trend')
         even_fig = px.line(df[df['week_type'] == 'Even'], x='waste_date', y='total_waste', color='floor', title='Even Week Waste Trend')
         odd_plot = odd_fig.to_html(full_html=False)
         even_plot = even_fig.to_html(full_html=False)
-
-        # Line Chart with Moving Average
+        
+        # Line Chart with 7-Day Moving Average of Waste
         df['moving_avg'] = df['total_waste'].rolling(window=7, min_periods=1).mean()
         moving_avg_fig = px.line(df, x='waste_date', y='moving_avg', color='floor', title='7-Day Moving Average of Waste')
         moving_avg_plot = moving_avg_fig.to_html(full_html=False)
-
-        # Scatter Plot for Waste Trends
-        scatter_fig = px.scatter(df, x='food_item', y='leftover_amount', color='floor', size='leftover_amount', title='Scatter Plot of Food Waste')
-        scatter_plot = scatter_fig.to_html(full_html=False)
-
-        return render_template('review_waste_feedback.html', pie_plot=pie_plot, floor_pie_plot=floor_pie_plot, odd_plot=odd_plot, even_plot=even_plot, moving_avg_plot=moving_avg_plot, scatter_plot=scatter_plot)
-
+        
+        # Scatter Plot for Correlation Analysis: (Food Rating vs Waste)
+        scatter_fig = px.scatter(df, x='food_item', y='leftover_amount', color='floor',
+                                 size='leftover_amount', title='Correlation Analysis: Food Rating vs Waste')
+        correlation_plot = scatter_fig.to_html(full_html=False)
+        
+        # Predictive Analysis: Simple Forecast using the latest moving average as a placeholder
+        last_date = df['waste_date'].max()
+        future_dates = pd.date_range(last_date, periods=8, freq='D')[1:]
+        last_avg = df['moving_avg'].iloc[-1]
+        predicted_waste = [last_avg for _ in range(len(future_dates))]
+        pred_df = pd.DataFrame({'waste_date': future_dates, 'predicted_waste': predicted_waste})
+        predictive_fig = px.line(pred_df, x='waste_date', y='predicted_waste', title='Predictive Analysis: Future Waste Trends')
+        predictive_plot = predictive_fig.to_html(full_html=False)
+        
+        # Use get_fixed_time() and convert its return value to a Pandas Timestamp for calculations
+        current_time = get_fixed_time()  # Returns a datetime object in IST
+        current_ts = pd.Timestamp(current_time).tz_localize(None)
+        current_week_start = current_ts - pd.Timedelta(days=current_ts.weekday())
+        two_weeks_ago = current_ts - pd.Timedelta(days=14)
+        
+        # Top 5 Most Wasted Food Items This Week (by leftover_amount)
+        df_current_week = df[df['waste_date'] >= current_week_start]
+        top5_df = df_current_week.groupby('food_item', as_index=False)['leftover_amount'].sum().nlargest(5, 'leftover_amount')
+        top5_waste_list = top5_df.to_dict(orient='records')
+        
+        # Best Waste-Reduction Day over the past 2 weeks and its menu
+        df_two_weeks = df[df['waste_date'] >= two_weeks_ago]
+        day_waste = df_two_weeks.groupby('waste_date', as_index=False)['total_waste'].mean()
+        best_day_row = day_waste.nsmallest(1, 'total_waste').iloc[0]
+        best_day = pd.to_datetime(best_day_row['waste_date']).strftime('%A, %Y-%m-%d')
+        best_day_week_type = 'Odd' if is_odd_week(pd.to_datetime(best_day_row['waste_date']).date()) else 'Even'
+        
+        # Fetch the menu for the best day using your get_menu() function
+        best_day_menu = get_menu(best_day_row['waste_date'])
+        
+        connection.close()
+        
+        return render_template('review_waste_feedback.html',
+                               no_data=False,
+                               total_waste_pie=total_waste_pie,
+                               floor_pie_plot=floor_pie_plot,
+                               odd_plot=odd_plot,
+                               even_plot=even_plot,
+                               moving_avg_plot=moving_avg_plot,
+                               correlation_plot=correlation_plot,
+                               predictive_plot=predictive_plot,
+                               top_5_wasted_food=top5_waste_list,
+                               best_day=best_day,
+                               best_day_week_type=best_day_week_type,
+                               best_day_menu=best_day_menu)
     except Exception as e:
         print(f"Error: {e}")
-        flash (f"An error occurred while fetching waste data: {e}", 'error')
+        flash(f"An error occurred while fetching waste data: {e}", 'error')
         return redirect(url_for('mess_dashboard'))
-    
+
 @app.route('/logout')
 def logout():
     session.clear()
@@ -1058,10 +1117,10 @@ def student_dashboard():
     cursor = connection.cursor()
 
     # Greeting
-    current_hour = datetime.now().hour
+    current_hour = get_fixed_time().hour
     if current_hour < 12:
         greeting = 'Good Morning'
-    elif current_hour < 18:
+    elif current_hour < 17:
         greeting = 'Good Afternoon'
     else:
         greeting = 'Good Evening'
@@ -1074,16 +1133,21 @@ def student_dashboard():
     else:
         feedback_status = "Feedback Pending"
 
+    weekday = get_fixed_time().strftime('%A')
+    week_type = 'odd' if is_odd_week() else 'even'
     # Leaderboard (Top-rated meals)
     cursor.execute("""
-        SELECT food_item, ROUND(AVG(d.rating), 2) as avg_rating
+        SELECT d.food_item, ROUND(AVG(d.rating), 2) as avg_rating
         FROM feedback_details d
         JOIN feedback_summary s ON d.feedback_id = s.feedback_id
-        WHERE mess = %s
-        GROUP BY food_item
+        JOIN menu m ON d.food_item = m.food_item  
+        WHERE s.mess = %s
+        AND m.day = %s  
+        AND m.week_type = %s
+        GROUP BY d.food_item
         ORDER BY avg_rating DESC
         LIMIT 5
-        """,(mess_name,))
+""", (mess_name, weekday, week_type))
     leaderboard = cursor.fetchall()
 
     # Waste Tracking Insight
@@ -1106,9 +1170,9 @@ def student_dashboard():
         GROUP BY s.mess;
     """)
     monthly_avg_ratings = cursor.fetchall()
-    for mess, avg in monthly_avg_ratings:
-        print(mess)
-        print(avg)
+    # for mess, avg in monthly_avg_ratings:
+    #     print(mess)
+    #     print(avg)
     if not monthly_avg_ratings:
         print("No ratings available for last month.")
     # Clamp the avg_rating to be between 1 and 5

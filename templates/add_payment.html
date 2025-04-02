@@ -23,15 +23,15 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-900 text-white font-sans">
   <div class="min-h-screen flex flex-col items-center justify-center px-4 py-10 relative">
 
     <!-- Dashboard Button -->
-    <a href="/mess_dashboard" class="absolute top-6 left-6 text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+    <a href="/mess_dashboard" class="absolute top-6 left-6 text-gray-900 bg-yellow-500 px-4 py-2 rounded-lg hover:bg-yellow-600 flex items-center">
       <i class="ph ph-house mr-2"></i> Dashboard
     </a>
 
-    <h1 class="text-3xl font-bold text-blue-600 mt-16 mb-8 text-center">Enter Payment Details</h1>
+    <h1 class="text-3xl font-bold text-white mt-16 mb-8 text-center">Enter Payment Details</h1>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=True) %}
@@ -49,15 +49,15 @@
       {% endif %}
     {% endwith %}
 
-    <form method="post" class="bg-white px-8 py-10 rounded-lg shadow-md w-full max-w-lg">
+    <form method="post" class="bg-gray-800 px-8 py-10 rounded-lg shadow-md w-full max-w-lg">
       <label class="block mb-4">
-        <span class="text-gray-700">Student Roll Number (s_id)</span>
-        <input type="text" name="s_id" placeholder="Enter Student Roll Number" class="mt-1 block w-full p-3 border rounded" required />
+        <span class="text-gray-300">Student Roll Number (s_id)</span>
+        <input type="text" name="s_id" placeholder="Enter Student Roll Number" class="mt-1 block w-full p-3 border rounded bg-gray-700 text-white" required />
       </label>
 
       <label class="block mb-4">
-        <span class="text-gray-700">Food Item</span>
-        <select name="food_item" class="mt-1 block w-full p-3 border rounded" required>
+        <span class="text-gray-300">Food Item</span>
+        <select name="food_item" class="mt-1 block w-full p-3 border rounded bg-gray-700 text-white" required>
           {% if not food_items %}
             <option disabled>No food items available</option>
           {% else %}
@@ -69,8 +69,8 @@
       </label>
 
       <label class="block mb-4">
-        <span class="text-gray-700">Payment Mode</span>
-        <select name="payment_mode" class="mt-1 block w-full p-3 border rounded" required>
+        <span class="text-gray-300">Payment Mode</span>
+        <select name="payment_mode" class="mt-1 block w-full p-3 border rounded bg-gray-700 text-white" required>
           <option value="Cash">Cash</option>
           <option value="Card">Card</option>
           <option value="UPI">UPI</option>
@@ -79,7 +79,7 @@
       </label>
 
       <!-- Submit Button -->
-      <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 w-full mt-6" 
+      <button type="submit" class="bg-yellow-500 text-gray-900 px-6 py-3 rounded-lg hover:bg-yellow-600 w-full mt-6" 
         {% if not food_items %} disabled class="opacity-50 cursor-not-allowed" {% endif %}>
         Submit Payment
       </button>

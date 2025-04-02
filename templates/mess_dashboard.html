@@ -22,15 +22,15 @@
     }
   </style>  
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-900 text-white font-sans">
   <div class="min-h-screen flex flex-col items-center justify-center p-6 relative w-full">
     
     <!-- Home and Logout Buttons (Responsive) -->
     <div class="absolute top-6 left-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-      <a href="/" class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 shadow-lg">
+      <a href="/" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600 shadow-lg">
         <i class="ph ph-house"></i> Home
       </a>
-      <a href="/logout" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-700 shadow-lg">
+      <a href="/logout" class="bg-red-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-600 shadow-lg">
         <i class="ph ph-sign-out"></i> Logout
       </a>
     </div>
@@ -38,13 +38,13 @@
     <!-- Profile Section (Responsive) -->
     <div class="absolute top-6 right-6 flex flex-col sm:flex-row items-end sm:items-center gap-4">
       <a href="/notifications" class="relative">
-        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg class="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.17V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.17c0 .53-.21 1.04-.595 1.425L4 17h5m6 0a3 3 0 01-6 0m6 0H9"></path>
         </svg>
       </a>
       <a href="/profile" class="flex items-center space-x-2 hover:underline">
-        <img src="{{ profile_image_url }}" alt="Profile" class="w-10 h-10 rounded-full border border-gray-300" />
-        <span class="text-gray-800 font-semibold">{{ username }}</span>
+        <img src="{{ profile_image_url }}" alt="Profile" class="w-10 h-10 rounded-full border border-yellow-500" />
+        <span class="text-yellow-500 font-semibold">{{ username }}</span>
       </a>
     </div>
 
@@ -54,9 +54,9 @@
         <div id="flash-container" class="w-full max-w-lg mb-6">
           {% for category, message in messages %}
             {% if category == 'success' %}
-              <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 bg-green-500">{{ message }}</div>
+              <div class="flash-message p-3 rounded-lg text-gray-900 text-sm mt-2 bg-green-400">{{ message }}</div>
             {% elif category == 'error' %}
-              <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 bg-red-500">{{ message }}</div>
+              <div class="flash-message p-3 rounded-lg text-gray-900 text-sm mt-2 bg-red-400">{{ message }}</div>
             {% endif %}
           {% endfor %}
         </div>
@@ -65,31 +65,31 @@
 
     <!-- Welcome Message -->
     <div class="mt-20 sm:mt-32 text-center">
-      <h1 class="text-3xl font-bold text-blue-600 mt-4 mb-4">Welcome, {{ mess_name }}!</h1>
-      <p class="text-gray-700 mb-8">Manage your mess activities using the options below.</p>
+      <h1 class="text-3xl font-bold text-yellow-500 mt-4 mb-4">Welcome, {{ mess_name }}!</h1>
+      <p class="text-gray-400 mb-8">Manage your mess activities using the options below.</p>
     </div>
     
     <!-- Action Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl px-4">
-      <a href="/add_non_veg_menu" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
-        <h2 class="text-xl font-semibold text-blue-600 mb-4">Add or Delete Non-Veg Menu</h2>
-        <p class="text-gray-700">Add non-veg meal options and their prices.</p>
+      <a href="/add_non_veg_menu" class="block p-6 bg-gray-800 rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
+        <h2 class="text-xl font-semibold text-yellow-400 mb-4">Add or Delete Non-Veg Menu</h2>
+        <p class="text-gray-300">Add non-veg meal options and their prices.</p>
       </a>
-      <a href="/add_payment_details" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
-        <h2 class="text-xl font-semibold text-green-600 mb-4">Add Payment Details</h2>
-        <p class="text-gray-700">Record payment data for mess transactions.</p>
+      <a href="/add_payment_details" class="block p-6 bg-gray-800 rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
+        <h2 class="text-xl font-semibold text-green-400 mb-4">Add Payment Details</h2>
+        <p class="text-gray-300">Record payment data for mess transactions.</p>
       </a>
-      <a href="/waste" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
-        <h2 class="text-xl font-semibold text-red-600 mb-4">Add Waste Feedback</h2>
-        <p class="text-gray-700">Provide feedback on the amount of food waste.</p>
+      <a href="/waste" class="block p-6 bg-gray-800 rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
+        <h2 class="text-xl font-semibold text-red-400 mb-4">Add Waste Feedback</h2>
+        <p class="text-gray-300">Provide feedback on the amount of food waste.</p>
       </a>
-      <a href="/review_payment_details" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
-        <h2 class="text-xl font-semibold text-purple-600 mb-4">Review Payment Details</h2>
-        <p class="text-gray-700">View and analyze payment records.</p>
+      <a href="/review_payment_details" class="block p-6 bg-gray-800 rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
+        <h2 class="text-xl font-semibold text-purple-400 mb-4">Review Payment Details</h2>
+        <p class="text-gray-300">View and analyze payment records.</p>
       </a>
-      <a href="/review_waste_feedback" class="block p-6 bg-white rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
-        <h2 class="text-xl font-semibold text-yellow-600 mb-4">Review Waste Feedback</h2>
-        <p class="text-gray-700">Monitor food waste patterns and reports.</p>
+      <a href="/review_waste_feedback" class="block p-6 bg-gray-800 rounded-lg shadow-md hover:scale-105 transition-transform duration-300">
+        <h2 class="text-xl font-semibold text-yellow-400 mb-4">Review Waste Feedback</h2>
+        <p class="text-gray-300">Monitor food waste patterns and reports.</p>
       </a>
     </div>
   </div>

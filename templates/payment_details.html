@@ -9,6 +9,7 @@
   <style>
     body {
       overflow-x: hidden;
+      /* background-color: white; */
     }
     .table-container {
       overflow-x: auto;
@@ -16,50 +17,50 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 font-sans sm:p-4 p-2">
+<body class="bg-gray-900 font-sans sm:p-4 p-2">
 
   <!-- Header Section -->
   <div class="flex justify-between items-center mb-4">
-    <button onclick="redirect_dash()" class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
+    <button onclick="redirect_dash()" class="inline-flex items-center bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 shadow-md">
       <i class="ph ph-house mr-2"></i> Dashboard
     </button>
   </div>
 
   <!-- Title Section -->
   <div class="text-center mb-4">
-    <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">Payment Details for {{ meal }} on {{ payment_date }}</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">Payment Details for {{ meal }} on {{ payment_date }}</h1>
   </div>
 
   {% if details %}
-    <div class="bg-white shadow-md rounded-lg mt-4 table-container">
+    <div class="bg-gray-800 shadow-md rounded-lg mt-4 table-container">
       <table class="w-full border-collapse">
-        <thead class="bg-blue-200">
+        <thead class="bg-yellow-400 hover:bg-yellow-500">
           <tr>
-            <th class="py-2 px-3 border-b">Student ID</th>
-            <th class="py-2 px-3 border-b">Food Item</th>
-            <th class="py-2 px-3 border-b">Amount (₹)</th>
-            <th class="py-2 px-3 border-b">Payment Mode</th>
+            <th class="py-2 px-3 border-b text-yellow-900">Student ID</th>
+            <th class="py-2 px-3 border-b text-yellow-900">Food Item</th>
+            <th class="py-2 px-3 border-b text-yellow-900">Amount (₹)</th>
+            <th class="py-2 px-3 border-b text-yellow-900">Payment Mode</th>
           </tr>
         </thead>
         <tbody>
           {% for s_id, food_item, amount, payment_mode in details %}
-            <tr class="hover:bg-gray-100 transition">
-              <td class="py-2 px-3 border-b">{{ s_id }}</td>
-              <td class="py-2 px-3 border-b">{{ food_item }}</td>
-              <td class="py-2 px-3 border-b">₹{{ amount }}</td>
-              <td class="py-2 px-3 border-b">{{ payment_mode }}</td>
+            <tr class="hover:bg-gray-700 transition">
+              <td class="py-2 px-3 border-b text-white">{{ s_id }}</td>
+              <td class="py-2 px-3 border-b text-white">{{ food_item }}</td>
+              <td class="py-2 px-3 border-b text-white">₹{{ amount }}</td>
+              <td class="py-2 px-3 border-b text-white">{{ payment_mode }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   {% else %}
-    <p class="text-gray-600 text-lg mt-4 text-center">No payment details found for this item.</p>
+    <p class="text-white text-lg mt-4 text-center">No payment details found for this item.</p>
   {% endif %}
 
   <!-- Back to Payment Summary Button -->
   <div class="mt-4 text-center">
-    <a href="/review_payment_details" class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
+    <a href="/review_payment_details" class="inline-flex items-center bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 shadow-md">
       Back to Payment Summary
     </a>
   </div>

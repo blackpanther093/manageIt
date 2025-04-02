@@ -11,8 +11,8 @@
       height: 150px;
       border-radius: 50%;
       background: conic-gradient(
-        #4CAF50 calc(var(--percentage) * 1%),
-        #ccc 0%
+        #facc15 calc(var(--percentage) * 1%),
+        #444 0%
       );
       display: flex;
       align-items: center;
@@ -23,14 +23,14 @@
       content: '';
       width: 120px;
       height: 120px;
-      background: white;
+      background: #1e293b;
       border-radius: 50%;
       position: absolute;
     }
     .progress-text {
       font-size: 24px;
       font-weight: bold;
-      color: #333;
+      color: #facc15;
       position: relative;
     }
 
@@ -43,27 +43,19 @@
     }
 
     @keyframes fadeInOut {
-      0% {
-        opacity: 0;
-      }
-      10% {
-        opacity: 1;
-      }
-      90% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-      }
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { opacity: 0; }
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans">
+<body class="bg-gray-900 text-white font-sans">
 
   <!-- Header Section -->
-  <header class="bg-blue-600 text-white p-6 flex justify-between items-center shadow-lg">
+  <header class="bg-gray-800 text-white p-6 flex justify-between items-center shadow-lg">
     <h1 class="text-2xl font-bold">Mess Management System</h1>
-    <a href="/logout" class="bg-white text-blue-600 px-6 py-2 rounded-lg shadow-lg hover:bg-gray-100 transition duration-300">Logout</a>
+    <a href="/logout" class="bg-yellow-500 text-gray-900 px-6 py-2 rounded-lg shadow-lg hover:bg-yellow-400 transition duration-300">Logout</a>
   </header>
 
   <!-- Flash Messages Section -->
@@ -83,30 +75,30 @@
       {% endif %}
     {% endwith %}
   </div>
+
   <!-- Main Content Section -->
   <main class="p-6 space-y-8">
 
     <!-- Greeting Section -->
     <section>
-      <h2 class="text-3xl font-semibold mb-6">{{ greeting }}, {{ session['student_id'] }}!</h2>
+      <h2 class="text-3xl font-semibold mb-6 text-yellow-400">{{ greeting }}, {{ session['student_name'] }}!</h2>
     </section>
 
     <!-- Feedback Reminder Section -->
-    <section class="bg-white p-6 rounded-lg shadow-md">
+    <section class="bg-gray-800 p-6 rounded-lg shadow-md">
       {% if feedback_status == "Feedback Pending" %}
         <div class="flex justify-between items-center">
-          <p class="text-red-600 font-semibold">You haven't submitted feedback for today yet.</p>
-          <a href="/feedback" class="bg-blue-500 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-blue-400 transition duration-300 ml-auto">Submit Feedback</a>
+          <p class="text-red-400 font-semibold">You haven't submitted feedback for today yet.</p>
+          <a href="/feedback" class="bg-yellow-500 text-gray-900 px-6 py-2 rounded-lg shadow-lg hover:bg-yellow-400 transition duration-300 ml-auto">Submit Feedback</a>
         </div>
       {% else %}
-        <p class="text-green-600 font-semibold">Thank you for submitting your feedback for today!</p>
+        <p class="text-green-400 font-semibold">Thank you for submitting your feedback for today!</p>
       {% endif %}
     </section>
 
     <!-- Ratings Section -->
-    <!-- Mess Ratings -->
     <section class="p-8">
-      <h2 class="text-xl font-semibold mb-4">Last Month Ratings</h2>
+      <h2 class="text-xl font-semibold mb-4 text-yellow-400">Last Month Ratings</h2>
       <div class="flex flex-wrap justify-center gap-8">
         {% for mess, avg_rating in monthly_avg_ratings %}
           <div class="flex flex-col items-center">
@@ -123,18 +115,18 @@
     </section>
 
     <!-- Top Rated Meals Section -->
-    <section class="bg-white p-6 rounded-lg shadow-md">
-      <h3 class="text-xl font-semibold mb-4">Top-Rated Meals</h3>
+    <section class="bg-gray-800 p-6 rounded-lg shadow-md">
+      <h3 class="text-xl font-semibold mb-4 text-yellow-400">Top-Rated Meals of today</h3>
       <table class="w-full text-left">
-        <thead class="bg-blue-500 text-white">
+        <thead class="bg-yellow-500 text-gray-900 rounded-t-lg">
           <tr>
-            <th class="py-2 px-4">Food Item</th>
-            <th class="py-2 px-4">Average Rating</th>
+            <th class="py-2 px-4 rounded-tl-lg">Food Item</th>
+            <th class="py-2 px-4 rounded-tr-lg">Average Rating</th>
           </tr>
         </thead>
         <tbody>
           {% for item, rating in leaderboard %}
-            <tr class="border-t">
+            <tr class="border-t border-gray-600">
               <td class="py-2 px-4">{{ item }}</td>
               <td class="py-2 px-4">{{ rating }}</td>
             </tr>
@@ -142,20 +134,10 @@
         </tbody>
       </table>
     </section>
-
-    <!-- Waste Insights Section -->
-    <section class="bg-white p-6 rounded-lg shadow-md">
-      <h3 class="text-xl font-semibold mb-4">Recent Waste Insights</h3>
-      <ul class="space-y-2">
-        {% for floor, waste in waste_insight %}
-          <li class="p-3 bg-red-100 rounded-lg text-red-800">Floor {{ floor }}: {{ waste }} Kg of waste</li>
-        {% endfor %}
-      </ul>
-    </section>
   </main>
 
   <!-- Footer Section -->
-  <footer class="bg-blue-600 text-white text-center py-4">
+  <footer class="bg-gray-800 text-white text-center py-4">
     <p>&copy; 2025 Mess Management System | All rights reserved.</p>
   </footer>
 
@@ -164,7 +146,7 @@
       setTimeout(() => {
         document.querySelectorAll(".flash-message").forEach((msg) => {
           msg.style.opacity = "0";
-          setTimeout(() => msg.remove(), 1000); // Remove after fade out
+          setTimeout(() => msg.remove(), 1000);
         });
       }, 5000);
     });

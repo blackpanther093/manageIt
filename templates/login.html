@@ -7,13 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
-<body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen">
-  <a href="\home" class="absolute top-6 left-6 inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md">
-    <i class="ph ph-house mr-2"></i> Dashboard
+<body class="bg-gray-900 text-gray-200 font-sans flex items-center justify-center min-h-screen">
+  <a href="\home" class="absolute top-6 left-6 inline-flex items-center bg-yellow-500 text-gray-900 px-6 py-3 rounded-lg hover:bg-yellow-600 shadow-md">
+    <i class="ph ph-house mr-2"></i> Home
   </a>
   
-  <div class="bg-white p-8 ml-5 mr-5 mt-20 mb-8 rounded-lg shadow-md w-full max-w-md relative">
-    <h1 class="text-2xl font-bold text-center mb-6 text-blue-600">Mess Management System</h1>
+  <div class="bg-gray-800 p-8 ml-5 mr-5 mt-20 mb-8 rounded-lg shadow-md w-full max-w-md relative">
+    <h1 class="text-2xl font-bold text-center mb-6 text-white-400">Mess Management System</h1>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=True) %}
@@ -33,16 +33,16 @@
 
     <form method="post">
       <label class="block mb-4">
-        <span class="text-gray-700">ID</span>
-        <input type="text" name="id" required placeholder="Enter your ID" class="mt-1 block w-full p-2 border rounded-lg">
+        <span class="text-white-300">ID</span>
+        <input type="text" name="id" required placeholder="Enter your ID" class="mt-1 block w-full p-2 border rounded-lg bg-gray-700 text-yellow-200">
       </label>
 
       <label class="block mb-4">
-        <span class="text-gray-700">Password</span>
-        <input type="password" name="password" required placeholder="Enter your Password" class="mt-1 block w-full p-2 border rounded-lg">
+        <span class="text-white-300">Password</span>
+        <input type="password" name="password" required placeholder="Enter your Password" class="mt-1 block w-full p-2 border rounded-lg bg-gray-700 text-yellow-200">
       </label>
 
-      <button type="submit" class="bg-blue-600 text-white w-full py-2 rounded-lg hover:bg-blue-700">Login</button>
+      <button type="submit" class="bg-yellow-500 text-gray-900 w-full py-2 rounded-lg hover:bg-yellow-600">Login</button>
     </form>
   </div>
 

@@ -7,38 +7,38 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
-<body class="bg-gray-100 font-sans p-8">
+<body class="bg-gray-900 font-sans p-8">
 
   <!-- Header Section -->
   <div class="flex justify-between items-center">
-    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md mb-4 sm:mb-0">
+    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 shadow-md mb-4 sm:mb-0">
       <i class="ph ph-house mr-2"></i> Dashboard
     </a>
     
   </div>
   <div class="flex items-center justify-center text-center">
-    <h1 class="text-3xl sm:text-4xl mt-8 mb-8 font-bold text-blue-600">Feedback Summary</h1>
+    <h1 class="text-3xl sm:text-4xl mt-8 mb-8 font-bold text-white">Feedback Summary</h1>
   </div>
   {% if feedback_summary_data %}
-  <div class="w-full overflow-x-auto">
-    <table class="min-w-full bg-white shadow-md rounded-lg">
+  <div class="w-full overflow-x-auto rounded-lg">
+    <table class="min-w-full bg-gray-800 shadow-md">
       <thead>
-        <tr class="bg-blue-200">
-          <th class="py-3 px-5 border-b">Date</th>
-          <th class="py-3 px-5 border-b">Meal</th>
-          <th class="py-3 px-5 border-b">No. of Students Rated</th>
-          <th class="py-3 px-5 border-b">Average Rating</th>
-          <th class="py-3 px-5 border-b">Actions</th>
+        <tr class="bg-yellow-400 hover:bg-yellow-500">
+          <th class="py-3 px-5 border-b text-yellow-900">Date</th>
+          <th class="py-3 px-5 border-b text-yellow-900">Meal</th>
+          <th class="py-3 px-5 border-b text-yellow-900">No. of Students Rated</th>
+          <th class="py-3 px-5 border-b text-yellow-900">Average Rating</th>
+          <th class="py-3 px-5 border-b text-yellow-900">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for feedback in feedback_summary_data %}
-          <tr class="hover:bg-gray-100 transition">
-            <td class="py-3 px-5 border-b">{{ feedback[0] }}</td>
-            <td class="py-3 px-5 border-b">{{ feedback[1] }}</td>
-            <td class="py-3 px-5 border-b">{{ feedback[2] }}</td>
-            <td class="py-3 px-5 border-b">{{ feedback[3] }}</td>
-            <td class="py-3 px-5 border-b">
+          <tr class="hover:bg-gray-700 transition">
+            <td class="py-3 px-5 border-b text-white">{{ feedback[0] }}</td>
+            <td class="py-3 px-5 border-b text-white">{{ feedback[1] }}</td>
+            <td class="py-3 px-5 border-b text-white">{{ feedback[2] }}</td>
+            <td class="py-3 px-5 border-b text-white">{{ feedback[3] }}</td>
+            <td class="py-3 px-5 border-b text-white">
               <a href="{{ url_for('feedback_detail', feedback_date=feedback[0], meal=feedback[1]) }}" class="text-blue-500 hover:underline">View Details</a>
             </td>
           </tr>

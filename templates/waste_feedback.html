@@ -17,7 +17,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-900 text-white font-sans">
 
   <div class="min-h-screen flex flex-col items-center justify-start w-full overflow-auto px-4">
     
@@ -41,13 +41,13 @@
       {% endif %}
     {% endwith %}
 
-    <h1 class="text-3xl font-bold text-red-600 text-center mt-24 mb-8">Waste Management Form</h1>
+    <h1 class="text-3xl font-bold text-red-500 text-center mt-24 mb-8">Waste Management Form</h1>
 
     <!-- Form Section -->
-    <form method="post" class="bg-white p-6 sm:p-8 mb-8 rounded-lg shadow-md w-[95%] sm:w-full max-w-[90%] sm:max-w-lg">
+    <form method="post" class="bg-gray-800 p-6 sm:p-8 mb-8 rounded-lg shadow-md w-[95%] sm:w-full max-w-[90%] sm:max-w-lg">
       <label class="block mb-4">
-        <span class="text-gray-700">Select Floor</span>
-        <select name="floor" id="floorSelect" class="mt-1 block w-full p-2 border rounded" onchange="toggleNonVegSection()" required>
+        <span class="text-gray-300">Select Floor</span>
+        <select name="floor" id="floorSelect" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white" onchange="toggleNonVegSection()" required>
           {% if session['mess'] == 'mess1' %}
             <option value="Ground">Ground Floor</option>
             <option value="First">First Floor</option>
@@ -59,37 +59,37 @@
       </label>
 
       <label class="block mb-4">
-        <span class="text-gray-700">Total Waste Amount (in kg)</span>
-        <input type="number" name="waste_amount" min="0" step="0.1" class="mt-1 block w-full p-2 border rounded" required />
+        <span class="text-gray-300">Total Waste Amount (in kg)</span>
+        <input type="number" name="waste_amount" min="0" step="0.1" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white" required />
       </label>
 
-      <h2 class="text-xl font-semibold mb-4">Veg Menu</h2>
+      <h2 class="text-xl font-semibold mb-4 text-gray-300">Veg Menu</h2>
       {% for item in veg_menu_items %}
         <label class="block mb-4">
-          <span class="text-gray-700">{{ item }}</span>
-          <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded" required />
-          <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded" required />
+          <span class="text-gray-300">{{ item }}</span>
+          <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white" required />
+          <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white" required />
         </label>
       {% endfor %}
 
       <!-- Non-Veg Section (Only Renders if There are Non-Veg Items) -->
       {% if (session['mess'] == 'mess1' and non_veg_menu1) or (session['mess'] == 'mess2' and non_veg_menu2) %}
         <div id="nonVegSection" class="hidden">
-          <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu</h2>
+          <h2 class="text-xl font-semibold mt-6 mb-4 text-gray-300">Non-Veg Menu</h2>
           {% if session['mess'] == 'mess1' %}
             {% for item, cost in non_veg_menu1 %}
               <label class="block mb-4">
-                <span class="text-gray-700">{{ item }} - ₹{{ cost }}</span>
-                <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
-                <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
+                <span class="text-gray-300">{{ item }} - ₹{{ cost }}</span>
+                <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white nonVegInput" />
+                <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white nonVegInput" />
               </label>
             {% endfor %}
           {% elif session['mess'] == 'mess2' %}
             {% for item, cost in non_veg_menu2 %}
               <label class="block mb-4">
-                <span class="text-gray-700">{{ item }} - ₹{{ cost }}</span>
-                <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
-                <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded nonVegInput" />
+                <span class="text-gray-300">{{ item }} - ₹{{ cost }}</span>
+                <input type="number" name="prepared_{{ item }}" min="0" placeholder="Prepared (kg)" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white nonVegInput" />
+                <input type="number" name="leftover_{{ item }}" min="0" placeholder="Leftover (kg)" class="mt-1 block w-full p-2 border rounded bg-gray-700 text-white nonVegInput" />
               </label>
             {% endfor %}
           {% endif %}
@@ -98,7 +98,7 @@
 
       <!-- Ensure Button is Always Visible -->
       <div class="mt-6">
-        <button type="submit" class="bg-red-600 text-white w-full py-3 rounded-lg hover:bg-red-700">Submit Waste Data</button>
+        <button type="submit" class="bg-red-500 text-white w-full py-3 rounded-lg hover:bg-red-600">Submit Waste Data</button>
       </div>
 
     </form>

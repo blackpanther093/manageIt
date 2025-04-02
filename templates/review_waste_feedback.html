@@ -6,27 +6,24 @@
   <title>Review Waste Feedback</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .graph-container {
+    .section-container {
       padding: 20px;
       background: #ffffff;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
       margin-bottom: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       width: 100%;
       overflow-x: auto;
       overflow-y: hidden;
     }
-    .graph-container h2 {
+    .section-container h2 {
       margin-bottom: 15px;
       text-align: center;
       font-size: 1.5rem;
       font-weight: 700;
       color: #1e3a8a;
     }
-    .graph-container div {
+    .section-content {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -36,59 +33,146 @@
       overflow-x: auto;
       white-space: nowrap;
     }
-    .graph-container img, .graph-container svg {
+    .section-content img, .section-content svg, .section-content canvas {
       width: 100%;
       height: auto;
       max-width: 100%;
     }
+    .list-container {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      margin-bottom: 40px;
+      width: 100%;
+    }
+    .list-container h2 {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 15px;
+    }
+    .list-container ul {
+      list-style-type: none;
+      padding: 0;
+      text-align: center;
+    }
+    .list-container li {
+      font-size: 1.1rem;
+      margin: 8px 0;
+      color: #1e3a8a;
+    }
   </style>
 </head>
-<body class="bg-gray-100 font-sans p-4 flex flex-col items-center">
-
+<body class="bg-gray-900 font-sans p-4 flex flex-col items-center">
+  
   <!-- Header Section -->
-  <div class="w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center mb-8">
-    <a href="/mess_dashboard" class="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 shadow-md mb-4 sm:mb-0">
+  <div class="flex justify-between mb-4 w-full max-w-6xl">
+    <a href="/mess_dashboard" class="absolute top-4 left-4 inline-flex items-center bg-yellow-500 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-yellow-600">
       Back to Dashboard
     </a>
-    <h1 class="text-3xl sm:text-4xl font-bold text-blue-600 text-center flex-1">Review Waste Feedback</h1>
   </div>
-
-  <div class="w-full max-w-6xl bg-white shadow-md rounded-lg p-6 space-y-10 overflow-x-auto">
+  
+  <div class="text-center mb-4 w-full max-w-6xl">
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">Review Waste Feedback</h1>
+  </div>
+  
+  <div class="w-full max-w-6xl bg-gray-800 shadow-md rounded-lg p-6 space-y-10 overflow-x-auto">
     {% if no_data %}
-      <p class="text-gray-600 text-lg text-center">No waste data available for the past 30 days.</p>
+      <p class="text-white text-lg text-center">No waste data available for the past 30 days.</p>
     {% else %}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div class="graph-container">
-          <h2>Waste Distribution Between Mess1 and Mess2</h2>
-          <div>{{ pie_plot | safe }}</div>
-        </div>
-
-        <div class="graph-container">
-          <h2>Floor-wise Waste Distribution</h2>
-          <div>{{ floor_pie_plot | safe }}</div>
-        </div>
-
-        <div class="graph-container">
+        
+        <!-- Line Graphs for Waste Trends -->
+        <div class="section-container">
           <h2>Odd Week Waste Trend</h2>
-          <div>{{ odd_plot | safe }}</div>
+          <div class="section-content">
+            <canvas id="oddWeekLineGraph">{{ odd_plot | safe }}</canvas>
+          </div>
         </div>
-
-        <div class="graph-container">
+        
+        <div class="section-container">
           <h2>Even Week Waste Trend</h2>
-          <div>{{ even_plot | safe }}</div>
+          <div class="section-content">
+            <canvas id="evenWeekLineGraph">{{ even_plot | safe }}</canvas>
+          </div>
         </div>
-
-        <div class="graph-container">
-          <h2>7-Day Moving Average of Waste</h2>
-          <div>{{ moving_avg_plot | safe }}</div>
+        
+        <!-- Pie Charts for Waste Distribution -->
+        <div class="section-container">
+          <h2>Floor-wise Waste Distribution</h2>
+          <div class="section-content">
+            <canvas id="floorWastePieChart">{{ floor_pie_plot | safe }}</canvas>
+          </div>
         </div>
-
-        <div class="graph-container">
-          <h2>Scatter Plot of Food Waste</h2>
-          <div>{{ scatter_plot | safe }}</div>
+        
+        <div class="section-container">
+          <h2>Yesterday's Waste - Floor 1</h2>
+          <div class="section-content">
+            <canvas id="yesterdayWasteFloor1">{{ yesterday_floor1_pie | safe }}</canvas>
+          </div>
         </div>
+        
+        <div class="section-container">
+          <h2>Yesterday's Waste - Floor 2</h2>
+          <div class="section-content">
+            <canvas id="yesterdayWasteFloor2">{{ yesterday_floor2_pie | safe }}</canvas>
+          </div>
+        </div>
+        
+        <!-- Total Waste Comparison Pie Chart -->
+        <div class="section-container">
+          <h2>Total Waste Comparison (Mess1 vs Mess2)</h2>
+          <div class="section-content">
+            <canvas id="totalWastePieChart">{{ total_waste_pie | safe }}</canvas>
+          </div>
+        </div>
+        
+        <!-- Best Waste-Reduction Day & Menu Section -->
+        <div class="section-container">
+          <h2>Best Waste-Reduction Day & Menu</h2>
+          <div class="section-content">
+            <p class="text-lg text-white">Best Day: {{ best_day }} ({{ best_day_week_type }})</p>
+          </div>
+          <div class="section-content">
+            <p class="text-md text-white">Menu: {{ best_day_menu }}</p>
+          </div>
+        </div>
+        
+        <!-- Predictive Analysis Section -->        
+        <div class="section-container">
+          <h2>Predictive Analysis: Future Waste Trends</h2>
+          <div class="section-content">
+            <canvas id="predictiveLineGraph">{{ predictive_plot | safe }}</canvas>
+          </div>
+        </div>
+        
+        <!-- Correlation Analysis Section -->        
+        <div class="section-container">
+          <h2>Correlation Analysis: Food Rating vs Waste</h2>
+          <div class="section-content">
+            <canvas id="correlationScatterPlot">{{ correlation_plot | safe }}</canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Top 5 Most Wasted Food Items (Presented as a list) -->      
+      <div class="list-container">
+        <h2>Top 5 Most Wasted Food Items This Week</h2>
+        <ul>
+          {% for item in top_5_wasted_food %}
+            <li>{{ item.food_item }} – {{ item.leftover_amount }} kg wasted</li>
+          {% endfor %}          
+        </ul>
       </div>
     {% endif %}
   </div>
+  
+  <!-- Optional: Include Chart.js initialization scripts if needed -->
+  <script>
+    // Initialize your charts using Chart.js here if necessary.
+  </script>
+  
 </body>
 </html>

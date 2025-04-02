@@ -6,58 +6,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mess Management - Home</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/framer-motion@latest/dist/framer-motion.umd.js"></script>
   <style>
     .progress-circle {
       width: 150px;
       height: 150px;
       border-radius: 50%;
       background: conic-gradient(
-        #4CAF50 calc(var(--percentage) * 1%),
-        #ccc 0%
+        #FFD700 calc(var(--percentage) * 1%),
+        #444 0%
       );
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
+      transition: transform 0.3s ease-in-out;
+    }
+    .progress-circle:hover {
+      transform: scale(1.15) rotate(10deg);
     }
     .progress-circle::before {
       content: '';
       width: 120px;
       height: 120px;
-      background: white;
+      background: #222;
       border-radius: 50%;
       position: absolute;
     }
     .progress-text {
       font-size: 24px;
       font-weight: bold;
-      color: #333;
+      color: #FFD700;
       position: relative;
+    }
+    .menu-item {
+      transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+    }
+    .menu-item:hover {
+      transform: translateX(10px);
+      color: #FFD700;
+    }
+    body {
+      background: #1A202C;
+      color: white;
+    }
+    .bg-white {
+      background: #2D3748 !important;
+      color: white;
+    }
+    .text-gray-500 {
+      color: #CBD5E0 !important;
+    }
+    .bg-blue-600 {
+      background: #2B6CB0 !important;
+    }
+    .text-blue-600 {
+      color: #63B3ED !important;
+    }
+    .hover\:bg-gray-200:hover {
+      background: #4A5568 !important;
     }
   </style>
 </head>
 
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-900 font-sans">
   <div class="min-h-screen flex flex-col">
-    <!-- Header Section -->
-    <header class="bg-blue-600 text-white p-4 flex justify-between items-center">
-      <h1 class="text-2xl font-bold">Mess Management System</h1>
-      <a href="/login" class="bg-white text-blue-600 px-4 py-2 rounded-lg shadow">Login</a>
+    <header class="bg-blue-900 text-white p-4 flex justify-between items-center animate-fade-in shadow-lg">
+      <h1 class="text-2xl font-bold transition-all duration-500 hover:scale-110">Mess Management System</h1>
+      <a href="/login" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg shadow hover:scale-110 transition-transform hover:bg-yellow-600">Login</a>
     </header>
 
-    <!-- Rating Section with Circular Progress Bar -->
-    <section class="p-8">
+    <section class="p-8 animate-slide-in">
       <h2 class="text-xl font-semibold mb-4">Today's Ratings</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Mess 1 Rating -->
         <div class="flex flex-col items-center">
           <h3 class="text-lg font-medium mb-2">Mess 1 Rating</h3>
           <div class="progress-circle" style="--percentage: calc({{ current_avg_rating_mess1 }} / 5 * 100)">
             <span class="progress-text">{{ current_avg_rating_mess1 }}/5</span>
           </div>
         </div>
-        
-        <!-- Mess 2 Rating -->
         <div class="flex flex-col items-center">
           <h3 class="text-lg font-medium mb-2">Mess 2 Rating</h3>
           <div class="progress-circle" style="--percentage: calc({{ current_avg_rating_mess2 }} / 5 * 100)">
@@ -67,14 +94,13 @@
       </div>
     </section>
 
-    <!-- Veg Menu Section -->
-    <section class="p-8">
+    <section class="p-8 animate-fade-in">
       <h2 class="text-xl font-semibold mb-4">Today's Veg Menu for {{ meal }}</h2>
-      <div class="bg-white p-6 rounded-lg shadow">
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-xl transition-shadow">
         {% if veg_menu_items %}
           <ul class="list-disc ml-6">
             {% for item in veg_menu_items %}
-              <li class="text-lg">{{ item }}</li>
+              <li class="text-lg menu-item">{{ item }}</li>
             {% endfor %}
           </ul>
         {% else %}
@@ -83,14 +109,13 @@
       </div>
     </section>
 
-    <!-- Non-Veg Menu Section for Mess 1 -->
-    <section class="p-8">
+    <section class="p-8 animate-fade-in">
       <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess 1) for {{ meal }}</h2>
-      <div class="bg-white p-6 rounded-lg shadow">
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-xl transition-shadow">
         {% if non_veg_menu1 %}
           <ul class="list-disc ml-6">
             {% for item, cost in non_veg_menu1 %}
-              <li class="text-lg">{{ item }} - ₹{{ cost }}</li>
+              <li class="text-lg menu-item">{{ item }} - ₹{{ cost }}</li>
             {% endfor %}
           </ul>
         {% else %}
@@ -99,14 +124,13 @@
       </div>
     </section>
 
-    <!-- Non-Veg Menu Section for Mess 2 -->
-    <section class="p-8">
+    <section class="p-8 animate-fade-in">
       <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess 2) for {{ meal }}</h2>
-      <div class="bg-white p-6 rounded-lg shadow">
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-xl transition-shadow">
         {% if non_veg_menu2 %}
           <ul class="list-disc ml-6">
             {% for item, cost in non_veg_menu2 %}
-              <li class="text-lg">{{ item }} - ₹{{ cost }}</li>
+              <li class="text-lg menu-item">{{ item }} - ₹{{ cost }}</li>
             {% endfor %}
           </ul>
         {% else %}
@@ -115,11 +139,9 @@
       </div>
     </section>
 
-    <!-- Footer Section -->
-    <footer class="bg-gray-800 text-white p-4 text-center mt-auto">
-      <p>&copy; 2025 Mess Management System. All Rights Reserved.</p>
+    <footer class="bg-gray-800 text-white p-4 text-center mt-auto animate-fade-in">
+      <p class="hover:scale-110 transition-transform">&copy; 2025 Mess Management System. All Rights Reserved.</p>
     </footer>
   </div>
 </body>
-
 </html>
