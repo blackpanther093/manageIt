@@ -1,31 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Profile</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    .flash-messages {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 300px;
+      max-width: 400px;
+      text-align: center;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 1em;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .flash-success { background: #1db954; color: #fff; }
+    .flash-error { background: #e74c3c; color: #fff; }
+
+    .profile-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .info {
+      margin: 15px 0;
+      font-size: 1.1em;
+    }
+
+    .info span {
+      font-weight: 600;
+      color: #1db954;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 12px 18px;
+      border: none;
+      font-size: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+
+    .btn-primary {
+      background: #1db954;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #17a74c;
+    }
+
+    /* Dashboard Button */
+    .dashboard-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .btn-dashboard {
+      background: #bcaa09;
+      color: #fff;
+      padding: 16px 20px;
+      font-size: 1.1em;
+      width: 250px;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .btn-dashboard:hover {
+      background: #c8ab0a;
+    }
+
+    @media (max-width: 480px) {
+      .profile-container { padding: 20px; }
+      h2 { font-size: 1.5em; }
+      .info { font-size: 1em; }
+      .btn { font-size: 0.9em; padding: 10px; }
+      .btn-dashboard { width: 90%; font-size: 1em; }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans">
-  <div class="min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-      <h1 class="text-3xl font-bold text-blue-600 mb-4">User Profile</h1>
 
-      <div class="mb-4">
-        <p><strong>Name:</strong> {{ user_data.get('name', 'N/A') }}</p>
-        <p><strong>Email:</strong> {{ user_data.get('email', 'N/A') }}</p>
-        <p><strong>Role:</strong> {{ role }}</p>
-        {% if user_data.get('mess') %}
-        <p><strong>Mess:</strong> {{ user_data.get('mess') }}</p>
-        {% endif %}
-      </div>
+<body>
 
-      <div class="mb-4">
-        <p><strong>Phone Number:</strong> {{ user_data.get('phone_number', 'N/A') }}</p>
-      </div>
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash-messages flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  {% endwith %}
 
-      <a href="/mess_dashboard" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Back to Dashboard</a>
-    </div>
+  <div class="profile-container">
+    <h2>User Profile</h2>
+
+    <p class="info"><span>ID:</span> {{ user_data.get('s_id', user_data.get('mess_id', user_data.get('admin_id', 'Unknown'))) }}</p>
+    <p class="info"><span>Name:</span> {{ user_data.get('name', user_data.get('username', 'Not available')) }}</p>
+    <p class="info"><span>Mess:</span> {{ user_data.get('mess', 'Not applicable') }}</p>
+
+    <a href="{{ url_for('update_password') }}" class="btn btn-primary">Change Password</a>
   </div>
+
+  <!-- Dashboard Button (Outside Profile Container) -->
+  <div class="dashboard-container">
+    {% if role == 'student' %}
+      <a href="{{ url_for('student_dashboard') }}" class="btn btn-dashboard">Go to Dashboard</a>
+    {% elif role == 'mess_official' %}
+      <a href="{{ url_for('mess_dashboard') }}" class="btn btn-dashboard">Go to Dashboard</a>
+    {% elif role == 'admin' %}
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-dashboard">Go to Dashboard</a>
+    {% endif %}
+  </div>
+
+  <script>
+    // Auto-hide flash messages after 3 seconds
+    document.addEventListener("DOMContentLoaded", function() {
+      let flashMessages = document.querySelectorAll(".flash-messages");
+      flashMessages.forEach(msg => {
+        msg.style.display = "block";
+        msg.style.opacity = "1";
+        setTimeout(() => {
+          msg.style.opacity = "0";
+          setTimeout(() => msg.style.display = "none", 500);
+        }, 3000);
+      });
+    });
+  </script>
+
 </body>
+
 </html>

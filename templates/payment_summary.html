@@ -32,7 +32,13 @@
 
   <!-- Title Section -->
   <div class="text-center mb-4">
-    <h1 class="text-2xl sm:text-3xl font-bold text-white">Payment Summary - {{ mess_name }}</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">Payment Summary - 
+      {% if mess_name == 'mess1' %}
+        Mess Sai
+      {% elif mess_name == 'mess2' %}
+        Mess Sheila
+      {% endif %}
+    </h1>
   </div>
 
   <!-- Payment Data Table -->

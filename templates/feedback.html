@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,12 +8,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
-    /* Floating Animation */
     @keyframes floatUp {
       0% {
         transform: translateY(30px);
         opacity: 0;
       }
+
       100% {
         transform: translateY(0);
         opacity: 1;
@@ -23,7 +24,6 @@
       animation: floatUp 0.6s ease-out;
     }
 
-    /* Dark Theme Styles */
     body {
       background-color: #121212;
       color: #e0e0e0;
@@ -44,7 +44,8 @@
       display: block;
     }
 
-    textarea, select {
+    textarea,
+    select {
       padding: 0.75rem;
       margin-top: 0.5rem;
       width: 100%;
@@ -70,7 +71,7 @@
     button:hover {
       background-color: #1d4ed8;
     }
-    
+
     .container {
       min-height: 150vh;
       display: flex;
@@ -79,88 +80,133 @@
       padding: 50px 20px;
       background-color: #181818;
     }
-
-    .text-gray-700 {
-      color: #bdbdbd;
-    }
-
-    .bg-blue-600 {
-      background-color: #2563eb !important;
-    }
-
-    .bg-blue-700:hover {
-      background-color: #1d4ed8 !important;
-    }
   </style>
 </head>
-<body>
-  <a href="\student_dashboard" class="absolute top-5 right-5 inline-flex items-center bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 shadow-md">
-    <i class="ph ph-house mr-2"></i> Dashboard
-  </a>
 
-  <div class="container">
+<body>
+  <div class="w-full flex justify-end p-4 bg-gray-900">
+    <button onclick="redirect_dash()"
+      class="inline-flex items-center justify-center 
+             bg-yellow-500 text-white 
+             w-32 sm:w-36 md:w-40 lg:w-48 
+             py-2 md:py-3 
+             rounded-lg hover:bg-yellow-600 
+             shadow-md text-sm md:text-base 
+             transition-all duration-300">
+      <i class="ph ph-house mr-2"></i> Dashboard
+    </button>
+  </div>
+
+  <div class="container bg-gray-900">
     <div class="form-container">
       <h1 class="text-3xl mt-4 font-bold text-white mb-8">Feedback Form</h1>
       <p class="text-lg mb-4 text-yellow-400">Welcome, {{ student_name }} from Mess {{ mess }}</p>
       <p class="text-md mb-6 text-yellow-400">Meal: <strong>{{ meal }}</strong></p>
 
-      <!-- Flash Message Container -->
-      <div id="flash-container" class="w-full max-w-lg mb-4"></div>
+      {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+      <div id="flash-container" class="w-full max-w-lg mb-4">
+        {% for category, message in messages %}
+        <div
+          class="flash-message p-3 rounded-lg text-white text-sm mt-2 {% if category == 'error' %} bg-red-500 {% else %} bg-green-500 {% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
 
       <form method="post">
         <h2 class="text-xl font-semibold mb-4">Veg Menu</h2>
         {% for item in veg_menu_items %}
-          <label class="block mb-4">
-            <span class="text-white">{{ item }}</span>
-            <select name="rating_{{ item }}" class="mt-1 block w-full p-2 border rounded" required>
-              <option value="" disabled selected>Select Rating</option>
-              {% for i in range(1, 6) %}
-                <option value="{{ i }}">{{ i }}</option>
-              {% endfor %}
-            </select>
-            <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
-          </label>
+        <label class="block mb-4">
+          <span class="text-white">{{ item }}</span>
+          <select name="rating_{{ item }}" class="mt-1 block w-full p-2 border rounded" required>
+            <option value="" disabled selected>Select Rating</option>
+            {% for i in range(1, 6) %}
+            <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+          </select>
+          <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)"
+            class="mt-2 block w-full p-2 border rounded"></textarea>
+        </label>
         {% endfor %}
 
         {% if non_veg_menu1 %}
-          <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu (Mess 1)</h2>
-          {% for item in non_veg_menu1 %}
-            <label class="block mb-4">
-              <span class="text-gray-700">{{ item[0] }} - ₹{{ item[1] if item is iterable else 'N/A' }}</span>
-              <select name="rating_{{ item }}" class="mt-1 block w-full p-2 border rounded" required>
-                <option value="" disabled selected>Select Rating</option>
-                {% for i in range(1, 6) %}
-                  <option value="{{ i }}">{{ i }}</option>
-                {% endfor %}
-              </select>
-              <textarea name="comment_{{ item }}" placeholder="Add a comment (Optional)" class="mt-2 block w-full p-2 border rounded"></textarea>
-            </label>
-          {% endfor %}
+        <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu (Mess 1)</h2>
+        {% for item in non_veg_menu1 %}
+        <label class="block mb-4">
+          <span class="text-white">{{ item[0] }} - ₹{{ item[1] if item is iterable else 'N/A' }}</span>
+          <select name="rating_{{ item[0] }}" class="mt-1 block w-full p-2 border rounded" required>
+            <option value="" disabled selected>Select Rating</option>
+            {% for i in range(1, 6) %}
+            <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+          </select>
+          <textarea name="comment_{{ item[0] }}" placeholder="Add a comment (Optional)"
+            class="mt-2 block w-full p-2 border rounded"></textarea>
+        </label>
+        {% endfor %}
         {% endif %}
 
-        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Submit Feedback</button>
+        {% if non_veg_menu2 %}
+        <h2 class="text-xl font-semibold mt-6 mb-4">Non-Veg Menu (Mess 2)</h2>
+        {% for item in non_veg_menu2 %}
+        <label class="block mb-4">
+          <span class="text-white">{{ item[0] }} - ₹{{ item[1] if item is iterable else 'N/A' }}</span>
+          <select name="rating_{{ item[0] }}" class="mt-1 block w-full p-2 border rounded" required>
+            <option value="" disabled selected>Select Rating</option>
+            {% for i in range(1, 6) %}
+            <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+          </select>
+          <textarea name="comment_{{ item[0] }}" placeholder="Add a comment (Optional)"
+            class="mt-2 block w-full p-2 border rounded"></textarea>
+        </label>
+        {% endfor %}
+        {% endif %}
+
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Submit
+          Feedback</button>
       </form>
     </div>
   </div>
   <script>
     function showFlashMessages() {
       const container = document.getElementById('flash-container');
-      
-      flashMessages.forEach((flash) => {
-        const flashDiv = document.createElement('div');
-        flashDiv.className = `flash-message p-3 rounded-lg text-white text-sm mt-2 ${flash.category === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
-        flashDiv.textContent = flash.message;
-        container.appendChild(flashDiv);
 
+      // Check if flash messages exist in the template
+      if (!container) return;
+
+      const flashDivs = container.querySelectorAll('.flash-message');
+
+      flashDivs.forEach((flashDiv) => {
         setTimeout(() => {
           flashDiv.style.transition = 'opacity 0.5s';
           flashDiv.style.opacity = '0';
           setTimeout(() => flashDiv.remove(), 500);
         }, 5000);
       });
+
+      // Prevent duplicate flash messages on reload
+      if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+      }
     }
 
     window.onload = showFlashMessages;
+
+    function redirect_dash() {
+      const user_role = "{{ session['role'] }}";
+      if (user_role === 'student') {
+        window.location.href = '/student_dashboard';
+      } 
+      else {
+        window.location.href = '/';
+      }
+    }
   </script>
+
 </body>
+
 </html>

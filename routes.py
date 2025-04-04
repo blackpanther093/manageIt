@@ -4,6 +4,7 @@ from flask import Flask,render_template, request, redirect, session, url_for, fl
 from utils import get_menu, avg_rating, get_current_meal, is_odd_week, get_fixed_time
 from db import get_db_connection
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 # from app import app  
 import plotly.express as px
 import pandas as pd
@@ -33,8 +34,7 @@ def home():
         current_avg_rating_mess2=current_avg_rating_mess2)
 
 # app = Flask(__name__)
-
-@app.route('/login', methods=['GET','POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         id = request.form.get('id')
@@ -44,10 +44,10 @@ def login():
         cursor = connection.cursor()
 
         # Check if the user is a student
-        cursor.execute("SELECT s_id, name, mess FROM student WHERE BINARY s_id = %s AND BINARY password = %s", (id, password))
+        cursor.execute("SELECT s_id, name, mess, password FROM student WHERE BINARY s_id = %s", (id,))
         student = cursor.fetchone()
 
-        if student:
+        if student and check_password_hash(student[3], password):
             session['student_id'] = student[0]
             session['student_name'] = student[1]
             session['mess'] = student[2]
@@ -57,60 +57,72 @@ def login():
             return redirect(url_for('student_dashboard'))
 
         # Check if the user is a mess official
-        cursor.execute("SELECT mess_id, mess FROM mess_data WHERE BINARY mess_id = %s AND BINARY password = %s", (id, password))
+        cursor.execute("SELECT mess_id, mess, password FROM mess_data WHERE BINARY mess_id = %s", (id,))
         mess_official = cursor.fetchone()
 
-        if mess_official:
+        if mess_official and check_password_hash(mess_official[2], password):
             session['mess_id'] = mess_official[0]
             session['mess'] = mess_official[1]
             session['role'] = 'mess_official'
+            # print(session)
             cursor.close()
             connection.close()
             return redirect(url_for('mess_dashboard'))
 
-    # Check if the user is an admin
-        cursor.execute("SELECT admin_id, username FROM admin WHERE BINARY admin_id = %s AND BINARY password = %s", (id, password))
+        # Check if the user is an admin
+        cursor.execute("SELECT admin_id, username, password FROM admin WHERE BINARY admin_id = %s", (id,))
         admin = cursor.fetchone()
 
-        if admin:
+        if admin and check_password_hash(admin[2], password):
             session['admin_id'] = admin[0]
             session['admin_name'] = admin[1]
-            # session['admin_mess'] = mess_official[1]
             session['role'] = 'admin'
             cursor.close()
             connection.close()
             return redirect(url_for('admin_dashboard'))
+
         cursor.close()
         connection.close()
-        flash("Invalid id or Password.",'error')
+        flash("Invalid ID or Password.", 'error')
         return redirect(url_for('login'))
-        
-        # cursor.close()
-        # connection.close()
+
     return render_template('login.html')
 
-@app.route('/feedback', methods=['GET','POST'])
+@app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
-    # Ensure student is logged in
-    if 'student_id' not in session:
-        flash("Invalid login",'error')
-        return redirect(url_for('login'))
+    student_id = session.get('student_id')
+    student_name = session.get('student_name')
+    mess = session.get('mess')
+    meal = get_current_meal()
+    if student_id:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s AND meal = %s", (student_id, mess, meal))
+        feedback_given = set(row[0] for row in cursor.fetchall())
+        cursor.close()
+        connection.close()
+        if student_id in feedback_given:
+            flash("Feedback already submitted for today.", "error")
+            return redirect(url_for('home'))
+    
+    if not student_id or not student_name or not mess:
+        flash("Session expired. Please log in again.", "error")
+        return redirect(url_for('home'))
 
-    student_id = session['student_id']
-    student_name = session['student_name']
-    mess = session['mess']
-
-    # Select the appropriate database
-    # db_name = 'mess1' if mess == 'mess1' else 'mess2'
+    # Time check and meal filtering logic
     current_hour = get_fixed_time().hour
-
     meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
-    if((meal == 'Breakfast' and current_hour < 7) or (meal == 'Lunch' and current_hour < 12) or (meal == 'Snacks' and current_hour < 17) or (meal == 'Dinner' and current_hour < 19)):
+    if((meal == 'Breakfast' and current_hour < 7) or 
+       (meal == 'Lunch' and current_hour < 12) or 
+       (meal == 'Snacks' and current_hour < 17) or 
+       (meal == 'Dinner' and current_hour < 19)):
         meal = None
-    if not meal:
-        flash("No meal available at the moment.", "error")
-        return redirect(url_for('student_dashboard'))
 
+    if not meal:
+        flash("No meal available at the moment", "error")
+        return redirect('/')
+
+    # Filter veg menu
     exclusions = {'salt', 'sugar', 'ghee', 'podi', 'coffee', 'bbj', 'sprouts', 'curd', 'papad'}
     veg_items = [
         item for item in veg_menu_items 
@@ -118,23 +130,21 @@ def feedback():
         and not any(keyword in item.lower() for keyword in ['banana', 'pickle', 'salad', 'cut fruit', 'sauce', 'chutney'])
     ]
 
-    if request.method == 'POST':
+    if request.method == 'POST' and student_id:
         try:
             connection = get_db_connection()
             cursor = connection.cursor()
 
-            # Check if feedback already exists
+            # Check for duplicate feedback
             cursor.execute("""
                 SELECT COUNT(*) FROM feedback_summary
                 WHERE s_id = %s AND feedback_date = CURDATE() AND meal = %s
             """, (student_id, meal))
-            feedback_exists = cursor.fetchone()[0]
-
-            if feedback_exists:
+            if cursor.fetchone()[0]:
                 flash("You have already submitted feedback for this meal today.", "error")
-                return redirect(url_for('student_dashboard'))
+                return redirect('/')
 
-            # Collect Feedback Data
+            # Collect ratings and comments
             food_ratings = {}
             comments = {}
             non_veg_menu = non_veg_menu1 if mess == 'mess1' else non_veg_menu2
@@ -145,38 +155,39 @@ def feedback():
                 comment = request.form.get(f'comment_{item}')
                 if rating:
                     food_ratings[item] = int(rating)
-                    comments[item] = comment if comment else None
+                    comments[item] = comment or None
 
             if not food_ratings:
                 flash("No ratings submitted. Please provide at least one rating.", "error")
                 return redirect(url_for('feedback'))
 
-            # Insert into feedback_summary
+            # Insert into summary
             cursor.execute("""
                 INSERT INTO feedback_summary (s_id, feedback_date, meal, mess)
                 VALUES (%s, CURDATE(), %s, %s)
             """, (student_id, meal, mess))
             feedback_id = cursor.lastrowid
 
-            # Insert into feedback_details
+            # Insert into details
             for item, rating in food_ratings.items():
                 food_item = item[0] if isinstance(item, tuple) else item
                 cursor.execute("""
                     INSERT INTO feedback_details (feedback_id, food_item, rating, comments)
                     VALUES (%s, %s, %s, %s)
-                """, (feedback_id, food_item, rating, comments.get(item, None)))
+                """, (feedback_id, food_item, rating, comments.get(item)))
 
             connection.commit()
-            cursor.close()
-            connection.close()
-
             flash("Feedback submitted successfully!", "success")
-            return redirect(url_for('student_dashboard'))
+            return redirect('/')
 
         except Exception as e:
             connection.rollback()
-            flash("An error occurred while submitting feedback. Please try again.", "error")
+            flash(f"An error occurred while submitting feedback: {e}", "error")
             return redirect(url_for('feedback'))
+
+        finally:
+            cursor.close()
+            connection.close()
 
     return render_template(
         'feedback.html',
@@ -187,6 +198,55 @@ def feedback():
         student_name=student_name,
         mess=mess
     )
+
+@app.route('/enter-id', methods=['GET', 'POST'])
+def enter_id():
+    student_id = session.get('student_id')  # Safe way to check if logged in
+    # student_name = session.get('student_name')
+    mess = session.get('mess')
+    meal = get_current_meal()
+    if student_id:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s AND meal = %s", (student_id, mess, meal))
+        feedback_given = set(row[0] for row in cursor.fetchall())
+        cursor.close()
+        connection.close()
+        if student_id in feedback_given:
+            flash("Feedback already submitted for today.", "error")
+            return redirect(url_for('home'))
+        else:
+           return redirect(url_for('feedback'))
+        
+    if request.method == 'POST':
+        student_id = request.form.get('s_id')
+
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor()
+            cursor.execute("SELECT name, mess FROM student WHERE s_id = %s", (student_id,))
+            data = cursor.fetchone()
+
+            if not data:
+                flash("Invalid student ID. Please try again.", "error")
+                return redirect(url_for('enter_id'))
+
+            student_name, mess = data
+            session['student_id'] = student_id
+            session['student_name'] = student_name
+            session['mess'] = mess
+
+            return redirect(url_for('feedback'))  # All set, go to feedback
+
+        except Exception as e:
+            flash(f"Database error: {e}", "error")
+            return redirect(url_for('enter_id'))
+
+        finally:
+            cursor.close()
+            connection.close()
+
+    return render_template('enter_id.html')  # First-time load or failed submission
 
 @app.route('/waste', methods=['GET', 'POST'])
 def waste():
@@ -276,7 +336,8 @@ def waste():
             flash ("An error occurred while submitting waste data.",'error')
             return redirect(url_for('waste'))
         
-    # session.pop('_flashes', None)
+    # session.pop("flashed_messages", None)
+    session.pop('_flashes', None)
     return render_template('waste_feedback.html', meal=meal, veg_menu_items=veg_items, 
                             non_veg_menu1=non_veg_menu1, non_veg_menu2=non_veg_menu2, mess=mess)
 
@@ -332,7 +393,7 @@ def add_non_veg_menu():
                     INSERT INTO non_veg_menu_items (menu_id, food_item, cost)
                     VALUES (%s, %s, %s)
                 """, (menu_id, item, cost))
-
+            flash( "Item added successfully.",'success')
             connection.commit()
 
             # Refresh `previous_items` after insert
@@ -343,7 +404,6 @@ def add_non_veg_menu():
                 WHERE DATE(menu_date) = CURDATE() AND meal = %s AND mess = %s;
             """, (meal, mess))
             previous_items = cursor.fetchall()
-
         cursor.close()
         connection.close()
                 
@@ -381,7 +441,7 @@ def delete_item():
     try:
         cursor.execute("DELETE FROM non_veg_menu_items WHERE item_id = %s;", (item_id,))
         connection.commit()
-        flash('Item deleted successfully!','success')
+        flash('Item deleted successfully!','error')
         return redirect(url_for('add_non_veg_menu'))
     
     except Exception as e:
@@ -396,60 +456,25 @@ def delete_item():
 
 @app.route('/mess_dashboard')
 def mess_dashboard():
-    if 'role' not in session or session.get('role') != 'mess_official':
-        flash ("Access Denied: Only mess officials can access this page.",'error')
+    # if session.get('role') != 'mess_official':
+    #     flash ("Access Denied: Only mess officials can access this page.",'error')
 
-    if 'mess_id' not in session:
+    if 'mess_id' not in session or session.get('role') != 'mess_official':
         flash("Access Denied, Login again",'error')
         return redirect(url_for('login'))
 
     mess_id = session['mess_id']
     mess_name = session['mess']
+    # print(mess_name)
     username = session.get('student_name', 'Mess Official')
-    profile_image_url = "/static/profile_default.png"  # Change to actual profile image URL if available
-
-    # Fetch Notification Count
-    notification_count = 0
-    try:
-        connection = get_db_connection()
-        cursor = connection.cursor()
-
-        # Check for High Waste Notifications
-        cursor.execute(
-            """
-            SELECT COUNT(*) 
-            FROM waste_summary
-            GROUP BY floor
-            HAVING SUM(total_waste) > 50
-            """
-        )
-        notification_count += cursor.rowcount
-
-        # Check for Low Feedback Notifications
-        cursor.execute(
-            """
-            SELECT COUNT(*)
-            FROM feedback_details d
-            JOIN feedback_summary s ON d.feedback_id = s.feedback_id
-            WHERE mess=%s
-            GROUP BY s.meal, s.feedback_date
-            HAVING AVG(d.rating) < 3.0
-            """
-        ,(mess_name,))
-        notification_count += cursor.rowcount
-        cursor.close()
-        connection.close()
-    except Exception as e:
-        print(f"Error fetching notifications: {e}")
-    # finally:
-        
+    profile_image_url = "/static/profile_default.png"  # Change to actual profile image URL if available 
 
     return render_template('mess_dashboard.html', 
                             mess_id=mess_id, 
                             mess_name=mess_name, 
                             username=username,
                             profile_image_url=profile_image_url,
-                            notification_count=notification_count)
+    )
 
 @app.route('/add_payment_details', methods=['GET', 'POST'])
 def add_payment():
@@ -478,7 +503,7 @@ def add_payment():
                 # Fetch amount for the selected food item
                 # with get_db_connection() as connection, connection.cursor() as cursor:
                 cursor_main.execute("""
-                    SELECT cost FROM non_veg_menu_items n
+                    SELECT item_id,cost FROM non_veg_menu_items n
                     JOIN non_veg_menu_main m ON n.menu_id = m.menu_id
                     WHERE n.food_item = %s AND m.menu_date = CURDATE() AND m.meal = %s AND mess = %s
                 """, (food_item, meal, mess_name))
@@ -488,13 +513,13 @@ def add_payment():
                     flash("Invalid food item selected.", "error")
                     return redirect(url_for('add_payment'))
 
-                amount = amount_data[0]
+                item_id, amount = amount_data
                 cursor_main.fetchall()
                 # Insert payment record
                 cursor_main.execute("""
-                    INSERT INTO payment (s_id, mess, meal, payment_date, food_item, amount, payment_mode)
-                    VALUES (%s, %s, %s, CURDATE(), %s, %s, %s)
-                """, (s_id, mess_name, meal, food_item, amount, payment_mode))
+                    INSERT INTO payment (s_id, mess, meal, payment_date, food_item, amount, payment_mode, item_id)
+                    VALUES (%s, %s, %s, CURDATE(), %s, %s, %s, %s)
+                """, (s_id, mess_name, meal, food_item, amount, payment_mode, item_id))
 
                 connection_main.commit()
                 cursor_main.close()
@@ -732,96 +757,230 @@ def logout():
 @app.route('/notifications')
 def notifications():
     if 'role' not in session or (session['role'] == 'student' and 'student_id' not in session) or (session['role'] == 'mess_official' and 'mess_id' not in session):
-        return redirect(url_for('home'))
-
+        flash("Unauthorized access!", "error")
+        return redirect(url_for('login'))
 
     mess_name = session['mess']
+    role = session['role']
     notifications = []
-    # print(mess_name)
+    back_url = '/mess_dashboard' if role == 'mess_official' else '/student_dashboard'
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
-        # connection1 = get_db_connection(mess_name)
-        # cursor1 = connection1.cursor()
-        # Check for high waste
-        cursor.execute(
-            """
-            SELECT floor, SUM(total_waste) as total_waste
-            FROM waste_summary
-            GROUP BY floor
-            HAVING SUM(total_waste) > 50
-            """
-        )
-        for floor, waste in cursor.fetchall():
-            notifications.append(f"⚠️ High waste recorded on Floor {floor} with {waste} Kg.")
 
-        # Check for low feedback
-        cursor.execute(
-            """
-            SELECT AVG(d.rating), s.meal, s.feedback_date FROM feedback_details d
-            JOIN feedback_summary s ON d.feedback_id = s.feedback_id
-            WHERE mess = %s
-            GROUP BY s.meal, s.feedback_date
-            HAVING AVG(d.rating) < 3.0
-            """,(mess_name,)
-        )
-        for rating, meal, day in cursor.fetchall():
-            notifications.append(f"❗ Low feedback detected for {meal} on {day} with Avg. Rating {round(rating, 2)}")
+        # 📌 1️⃣ Fetch notifications from the `notifications` table (last 7 days only)
+        if role == 'student':
+            cursor.execute(
+                "SELECT message, created_at FROM notifications WHERE recipient_type IN ('student') AND created_at >= NOW() - INTERVAL 7 DAY ORDER BY created_at DESC"
+            )
+        elif role == 'mess_official':
+            cursor.execute(
+                "SELECT message, created_at FROM notifications WHERE recipient_type IN ('mess_official') AND created_at >= NOW() - INTERVAL 7 DAY ORDER BY created_at DESC"
+            )
+
+        # 📌 Store message with timestamp
+        notifications += [(row[0], row[1]) for row in cursor.fetchall()]
+
+        if role == 'mess_official':
+            # ⚠️ High waste warning
+            if mess_name == 'mess1':
+                floor1, floor2 = 'Ground', 'First'
+            elif mess_name == 'mess2':
+                floor1, floor2 = 'Second', 'Third'
+
+            # placeholders = ', '.join(['%s'] * len(floor))
+            cursor.execute("""
+                SELECT floor, SUM(total_waste) as total_waste, waste_date 
+                FROM waste_summary 
+                WHERE waste_date >= CURDATE()  - INTERVAL 7 DAY AND (floor = %s OR floor = %s)
+                GROUP BY floor, waste_date
+                HAVING SUM(total_waste) > 50
+                ORDER BY waste_date DESC;
+            """, (floor1, floor2))
+            
+            # cursor.execute(query, floor)
+            rows = cursor.fetchall()
+            # print("⚠️ High waste rows:", rows)
+            for fl, waste, time in rows:
+                notifications.append((f"⚠️ High waste recorded on {fl} Floor with {waste} Kg.", time))
+
+            # ❗ Low feedback alert
+            cursor.execute(
+                """
+                SELECT AVG(d.rating), s.meal, s.feedback_date 
+                FROM feedback_details d
+                JOIN feedback_summary s ON d.feedback_id = s.feedback_id
+                WHERE mess = %s AND s.feedback_date >= NOW() - INTERVAL 7 DAY
+                GROUP BY s.meal, s.feedback_date
+                HAVING AVG(d.rating) < 3.0
+                ORDER BY s.feedback_date DESC;
+                """, (mess_name,)
+            )
+            rows = cursor.fetchall()
+            # print("⚠️ Low feedback rows:", rows)
+            for rating, meal, day in rows:
+                notifications.append((f"❗ Low feedback detected for {meal} on {day} with Avg. Rating {round(rating, 2)}", day))
+
     except Exception as e:
         print(f"Error: {e}")
     finally:
         cursor.close()
         connection.close()
-        # cursor1.close()
-        # connection1.close()
 
-    return render_template('notifications.html', notifications=notifications)
+    return render_template('notifications.html', notifications=notifications, back_url = back_url)
 
 # Profile Route
 @app.route('/profile')
 def profile():
     role = session.get('role')
-    user_id = session.get('student_id') or session.get('mess_id')
+    
+    if not role:
+        flash("You must be logged in to access your profile.", "error")
+        return redirect(url_for('login'))
+
+    user_id = None
+    table = None
+    id_column = None
+    columns = None
+
+    if role == 'student':
+        user_id = session.get('student_id')
+        table = 'student'
+        id_column = 's_id'
+        columns = "s_id, name, mess"
+    elif role == 'mess_official':
+        user_id = session.get('mess_id')
+        table = 'mess_data'
+        id_column = 'mess_id'
+        columns = "mess_id, mess"
+    elif role == 'admin':
+        user_id = session.get('admin_id')
+        table = 'admin'
+        id_column = 'admin_id'
+        columns = "admin_id, username"
 
     if not user_id:
-        return "Error: No user logged in."
+        flash("Error: No user ID found in session.", "error")
+        return redirect(url_for('login'))
 
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        if role == 'student':
-            cursor.execute("SELECT name, mess FROM student WHERE s_id = %s", (user_id,))
-        elif role == 'mess_official':
-            cursor.execute("SELECT mess FROM mess_data WHERE mess_id = %s", (user_id,))
-        else:
-            return "Error: Invalid user role."
-
+        # Fetch user details based on role
+        query = f"SELECT {columns} FROM {table} WHERE {id_column} = %s"
+        cursor.execute(query, (user_id,))
         user_data = cursor.fetchone()
 
         if not user_data:
-            return "Error: User not found."
-        
-        # Convert to dictionary
+            flash("Error: User not found.", "error")
+            return redirect(url_for('login'))
+
+        # Convert fetched data to dictionary
         user_data = dict(zip([desc[0] for desc in cursor.description], user_data))
+
         return render_template('profile.html', user_data=user_data, role=role)
 
     except Exception as e:
-        return f"Database error: {e}"
+        flash(f"Database error: {e}", "error")
+        return redirect(url_for('login'))
+    
     finally:
         cursor.close()
         connection.close()
 
+@app.route('/update-password', methods=['GET', 'POST'])
+def update_password():
+    # Check if user is logged in
+    if 'role' not in session or (session['role'] != 'student' and session['role'] != 'mess_official' and session['role'] != 'admin'):
+        return redirect(url_for('login'))
+
+    if session['role'] == 'admin':
+        user_id = session['admin_id']  # Student ID from session
+    elif session['role'] == 'student':
+        user_id = session['student_id']
+    elif session['role'] == 'mess_official':
+        user_id = session['mess_id']
+    
+    role = session['role']
+
+    # Determine table name and primary key based on role
+    table_mapping = {
+        'student': ('student', 's_id'),
+        'mess_official': ('mess_data', 'mess_id'),
+        'admin': ('admin', 'admin_id')
+    }
+
+    if role not in table_mapping:
+        flash("Invalid user role.", "error")
+        return redirect(url_for('login'))
+
+    table_name, user_column = table_mapping[role]
+
+    if request.method == 'POST':
+        try:
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+            if new_password != confirm_password:
+                flash("New password and confirm password do not match.", "error")
+                return redirect(url_for('profile'))
+
+            with get_db_connection() as connection, connection.cursor() as cursor:
+                # Fetch current password from DB
+                cursor.execute(f"SELECT password FROM {table_name} WHERE {user_column} = %s", (user_id,))
+                user_data = cursor.fetchone()
+
+                if not user_data:
+                    flash("User not found.", "error")
+                    return redirect(url_for('profile'))
+
+                stored_password = user_data[0]
+
+                # Check if current password is correct (for mess_data, it's not hashed yet)
+                
+                if not check_password_hash(stored_password, current_password):
+                    flash("Incorrect current password.", "error")
+                    return redirect(url_for('profile'))
+
+                # Hash the new password
+                new_password_hash = generate_password_hash(new_password)
+
+                # Update password in DB
+                cursor.execute(f"UPDATE {table_name} SET password = %s WHERE {user_column} = %s", 
+                               (new_password_hash, user_id))
+                connection.commit()
+
+                flash("Password updated successfully!", "success")
+                return redirect(url_for('profile'))
+
+        except Exception as e:
+            print(f"Error updating password: {e}")
+            traceback.print_exc()
+            flash("An error occurred while updating the password.", "error")
+            return redirect(url_for('profile'))
+
+    return render_template('update_password.html')
+
 # Admin selection for mess
 @app.route('/select_mess', methods=['GET', 'POST'])
 def select_mess():
+    if 'admin_id' not in session:  # Only admin can send notifications
+        flash("Unauthorized access!", "error")
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         selected_mess = request.form.get('selected_mess')
-
+        if selected_mess == 'mess1':
+            mess = 'Mess Sai'
+        else:
+            mess = 'Mess Sheila'
+            
         # Check if the mess selection is valid
         if selected_mess in ['mess1', 'mess2']:
             session['admin_mess'] = selected_mess
-            flash(f"{selected_mess} selected successfully!", "success")
+            flash(f"{mess} selected successfully!", "success")
             return redirect(url_for('admin_dashboard'))
         else:
             flash("Invalid mess selection. Please try again.", "error")
@@ -837,6 +996,38 @@ def admin_dashboard():
     #     return redirect(url_for('select_mess'))
     # mess_name = session['admin_mess']
     return render_template('admin_dashboard.html')
+
+@app.route('/send_notification', methods=['GET','POST'])
+def send_notification():
+    if 'admin_id' not in session:  # Only admin can send notifications
+        flash("Unauthorized access!", "error")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        message = request.form.get('message')
+        recipient_type = request.form.get('recipient_type')
+
+        if not message or recipient_type not in ['student', 'mess_official', 'both']:
+            flash("Invalid input!", "error")
+            return redirect(url_for('admin_dashboard'))
+
+        # Insert the notification into the database
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO notifications (message, recipient_type) VALUES (%s, %s)",
+                (message, recipient_type)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            flash("Notification sent successfully!", "success")
+        except Exception as e:
+            flash(f"Error sending notification: {e}", "error")
+
+    return render_template('send_notifications.html')
 
 # Waste Summary
 @app.route('/review_waste', methods=['GET'])
@@ -1029,7 +1220,7 @@ def update_veg_menu():
         return redirect(url_for('login'))
 
     week_type = 'Odd' if is_odd_week() else 'Even'
-    day = datetime.now().strftime('%A')
+    day = get_fixed_time().strftime('%A')
     meal = get_current_meal()
 
     if request.method == 'POST':
@@ -1054,9 +1245,9 @@ def update_veg_menu():
                     INSERT INTO temporary_menu (week_type, day, meal, food_item)
                     VALUES (%s, %s, %s, %s)
                 ''', (week_type, day, meal, item.strip()))
-
-            connection.commit()
             flash('Veg menu updated temporarily for today.', 'success')
+            connection.commit()
+            
         except Exception as e:
             connection.rollback()
             flash(f'Error: {e}', 'error')
@@ -1104,7 +1295,8 @@ def restore_default_veg_menu():
 
     return redirect(url_for('update_veg_menu'))
 
-@app.route('/student_dashboard')
+#student_dashboard
+@app.route('/student_dashboard', methods=['GET'])
 def student_dashboard():
     if 'student_id' not in session or session['role'] != 'student':
         flash("Not yet logged in",'error')
@@ -1173,11 +1365,12 @@ def student_dashboard():
     # for mess, avg in monthly_avg_ratings:
     #     print(mess)
     #     print(avg)
-    if not monthly_avg_ratings:
-        print("No ratings available for last month.")
+    # if not monthly_avg_ratings:
+    #     print("No ratings available for last month.")
     # Clamp the avg_rating to be between 1 and 5
     connection.close()
-
+    # flashed_messages = get_flashed_messages(with_categories=True)
+    session.pop('_flashes', None)
     return render_template('student_dashboard.html',
                            greeting=greeting,
                            feedback_status=feedback_status,
@@ -1185,9 +1378,71 @@ def student_dashboard():
                            waste_insight=waste_insight,
                            monthly_avg_ratings=monthly_avg_ratings)
 
-def main():
-    login()
-    payment_summary()
+@app.route('/public-notifications')
+def public_notifications():
+    notifications = []
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
 
-if __name__=="__main__":
-    main()
+        # ✅ Fetch notifications meant for students
+        cursor.execute("""
+            SELECT message, created_at 
+            FROM notifications 
+            WHERE recipient_type IN ('both') 
+            AND created_at >= NOW() - INTERVAL 7 DAY 
+            ORDER BY created_at DESC
+        """)
+        notifications = cursor.fetchall()
+
+    except Exception as e:
+        print("Error fetching public notifications:", e)
+    finally:
+        cursor.close()
+        connection.close()
+
+    return render_template("notifications.html", notifications=notifications, back_url='/home')
+
+@app.route('/student_payment_details', methods=['GET'])
+def payment():
+    if 'student_id' not in session or session['role'] != 'student':
+        flash("Not yet logged in",'error')
+        return redirect(url_for('login'))
+    
+    student_id = session['student_id']
+    mess_name = session['mess']
+    # meal = get_current_meal()
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
+                    SELECT payment_date, meal, food_item, amount
+                    FROM payment
+                    WHERE mess = %s AND payment_date >= CURDATE() - INTERVAL 30 DAY
+                    AND s_id = %s
+                    GROUP BY payment_date, meal
+                    ORDER BY payment_date DESC;
+                """, (mess_name, student_id))
+        data = cursor.fetchall()
+
+        if not data:
+            flash("No payment data found for the last 30 days.", "error")
+            return render_template('payment.html', data=[], mess_name=mess_name)
+        connection.commit()
+        connection.close()
+        cursor.close()
+    except Exception as e:
+        print("Error fetching payment summary:")
+        logging.error("Error fetching payment summary", exc_info=True)
+        flash("An error occurred while fetching payment data.", "error")
+        return render_template('payment.html', data=[], mess_name=mess_name)
+
+    # Pass data to the template
+    return render_template('payment.html', data= data, mess_name=mess_name)
+
+# def main():
+#     login()
+#     payment_summary()
+
+# if __name__=="__main__":
+#     main()

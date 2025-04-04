@@ -12,19 +12,19 @@
       width: 150px;
       height: 150px;
       border-radius: 50%;
-      background: conic-gradient(
-        #FFD700 calc(var(--percentage) * 1%),
-        #444 0%
-      );
+      background: conic-gradient(#FFD700 calc(var(--percentage) * 1%),
+          #444 0%);
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       transition: transform 0.3s ease-in-out;
     }
+
     .progress-circle:hover {
       transform: scale(1.15) rotate(10deg);
     }
+
     .progress-circle::before {
       content: '';
       width: 120px;
@@ -33,38 +33,51 @@
       border-radius: 50%;
       position: absolute;
     }
+
     .progress-text {
       font-size: 24px;
       font-weight: bold;
       color: #FFD700;
       position: relative;
     }
+
     .menu-item {
       transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
     }
+
     .menu-item:hover {
       transform: translateX(10px);
       color: #FFD700;
     }
+
     body {
       background: #1A202C;
       color: white;
     }
+
     .bg-white {
       background: #2D3748 !important;
       color: white;
     }
+
     .text-gray-500 {
       color: #CBD5E0 !important;
     }
+
     .bg-blue-600 {
       background: #2B6CB0 !important;
     }
+
     .text-blue-600 {
       color: #63B3ED !important;
     }
+
     .hover\:bg-gray-200:hover {
       background: #4A5568 !important;
+    }
+
+    #flash-messages {
+    transition: opacity 0.5s ease;
     }
   </style>
 </head>
@@ -73,20 +86,63 @@
   <div class="min-h-screen flex flex-col">
     <header class="bg-blue-900 text-white p-4 flex justify-between items-center animate-fade-in shadow-lg">
       <h1 class="text-2xl font-bold transition-all duration-500 hover:scale-110">Mess Management System</h1>
-      <a href="/login" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg shadow hover:scale-110 transition-transform hover:bg-yellow-600">Login</a>
+      <div class="flex items-center gap-x-4">
+        <a href="/public-notifications" class="relative">
+          <svg class="w-7 h-7 text-yellow-400 hover:text-yellow-300 transition" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.17V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.17c0 .53-.21 1.04-.595 1.425L4 17h5m6 0a3 3 0 01-6 0m6 0H9">
+            </path>
+          </svg>
+        </a>
+
+        <a href="/login"
+          class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg shadow hover:scale-110 transition-transform hover:bg-yellow-600">
+          Login
+        </a>
+      </div>
     </header>
 
+    <!-- flash message -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-messages" class="px-6 pt-4">
+      {% for category, message in messages %}
+      <div class="mb-4 p-4 rounded-lg shadow-md 
+                    {% if category == 'success' %}
+                      bg-green-500 text-white
+                    {% elif category == 'error' %}
+                      bg-red-500 text-white
+                    {% else %}
+                      bg-yellow-500 text-gray-900
+                    {% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <section class="p-8 animate-slide-in">
-      <h2 class="text-xl font-semibold mb-4">Today's Ratings</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-white transition-all duration-500 hover:scale-110">
+          Today's {{ meal }} Ratings
+        </h2>
+        <a href="{{ url_for('enter_id') }}"
+          class="bg-yellow-500 text-gray-900 px-3 py-2 rounded-lg shadow hover:scale-110 transition-transform hover:bg-yellow-600">
+          Give Feedback
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
         <div class="flex flex-col items-center">
-          <h3 class="text-lg font-medium mb-2">Mess 1 Rating</h3>
+          <h3 class="text-lg font-medium mb-2">Mess Sai Rating</h3>
           <div class="progress-circle" style="--percentage: calc({{ current_avg_rating_mess1 }} / 5 * 100)">
             <span class="progress-text">{{ current_avg_rating_mess1 }}/5</span>
           </div>
         </div>
         <div class="flex flex-col items-center">
-          <h3 class="text-lg font-medium mb-2">Mess 2 Rating</h3>
+          <h3 class="text-lg font-medium mb-2">Mess Sheila Rating</h3>
           <div class="progress-circle" style="--percentage: calc({{ current_avg_rating_mess2 }} / 5 * 100)">
             <span class="progress-text">{{ current_avg_rating_mess2 }}/5</span>
           </div>
@@ -94,47 +150,48 @@
       </div>
     </section>
 
+
     <section class="p-8 animate-fade-in">
       <h2 class="text-xl font-semibold mb-4">Today's Veg Menu for {{ meal }}</h2>
       <div class="bg-white p-6 rounded-lg shadow hover:shadow-xl transition-shadow">
         {% if veg_menu_items %}
-          <ul class="list-disc ml-6">
-            {% for item in veg_menu_items %}
-              <li class="text-lg menu-item">{{ item }}</li>
-            {% endfor %}
-          </ul>
+        <ul class="list-disc ml-6">
+          {% for item in veg_menu_items %}
+          <li class="text-lg menu-item">{{ item }}</li>
+          {% endfor %}
+        </ul>
         {% else %}
-          <p class="text-gray-500">No Veg items available for this meal.</p>
+        <p class="text-gray-500">No Veg items available for this meal.</p>
         {% endif %}
       </div>
     </section>
 
     <section class="p-8 animate-fade-in">
-      <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess 1) for {{ meal }}</h2>
+      <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess Sai) for {{ meal }}</h2>
       <div class="bg-white p-6 rounded-lg shadow hover:shadow-xl transition-shadow">
         {% if non_veg_menu1 %}
-          <ul class="list-disc ml-6">
-            {% for item, cost in non_veg_menu1 %}
-              <li class="text-lg menu-item">{{ item }} - ₹{{ cost }}</li>
-            {% endfor %}
-          </ul>
+        <ul class="list-disc ml-6">
+          {% for item, cost in non_veg_menu1 %}
+          <li class="text-lg menu-item">{{ item }} - ₹{{ cost }}</li>
+          {% endfor %}
+        </ul>
         {% else %}
-          <p class="text-gray-500">No Non-Veg items available in Mess 1 for this meal.</p>
+        <p class="text-gray-500">No Non-Veg items available in Mess Sai for this meal.</p>
         {% endif %}
       </div>
     </section>
 
     <section class="p-8 animate-fade-in">
-      <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess 2) for {{ meal }}</h2>
+      <h2 class="text-xl font-semibold mt-6 mb-4">Today's Non-Veg Menu (Mess Sheila) for {{ meal }}</h2>
       <div class="bg-white p-6 rounded-lg shadow hover:shadow-xl transition-shadow">
         {% if non_veg_menu2 %}
-          <ul class="list-disc ml-6">
-            {% for item, cost in non_veg_menu2 %}
-              <li class="text-lg menu-item">{{ item }} - ₹{{ cost }}</li>
-            {% endfor %}
-          </ul>
+        <ul class="list-disc ml-6">
+          {% for item, cost in non_veg_menu2 %}
+          <li class="text-lg menu-item">{{ item }} - ₹{{ cost }}</li>
+          {% endfor %}
+        </ul>
         {% else %}
-          <p class="text-gray-500">No Non-Veg items available in Mess 2 for this meal.</p>
+        <p class="text-gray-500">No Non-Veg items available in Mess Sheila for this meal.</p>
         {% endif %}
       </div>
     </section>
@@ -143,5 +200,14 @@
       <p class="hover:scale-110 transition-transform">&copy; 2025 Mess Management System. All Rights Reserved.</p>
     </footer>
   </div>
+  <script>
+    setTimeout(() => {
+      const flash = document.getElementById('flash-messages');
+      if (flash) {
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 500); // Fully remove after fade out
+      }
+    }, 3000); // 3 seconds
+  </script>  
 </body>
 </html>

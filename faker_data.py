@@ -4,6 +4,7 @@ import random
 from utils import get_db_connection, get_menu
 from datetime import datetime, timedelta
 from itertools import count
+from werkzeug.security import generate_password_hash
 
 def generate_students(n=50):
     fake = Faker()
@@ -243,10 +244,38 @@ def generate_payments(n=100):
     connection.close()
     print(f"{n} payment records inserted.")
 
+# from database import get_db_connection
+def hash_passwords():
+    with get_db_connection() as connection, connection.cursor() as cursor:
+        # Hash and update admin passwords
+        cursor.execute("SELECT admin_id, password FROM admin")
+        admins = cursor.fetchall()
+        for admin_id, plain_password in admins:
+            hashed_password = generate_password_hash(plain_password)
+            cursor.execute("UPDATE admin SET password = %s WHERE admin_id = %s", (hashed_password, admin_id))
+
+        # Hash and update student passwords
+        cursor.execute("SELECT s_id, password FROM student")
+        students = cursor.fetchall()
+        for s_id, plain_password in students:
+            hashed_password = generate_password_hash(plain_password)
+            cursor.execute("UPDATE student SET password = %s WHERE s_id = %s", (hashed_password, s_id))
+
+        # Hash and update mess official passwords
+        cursor.execute("SELECT mess_id, password FROM mess_data")
+        mess_officials = cursor.fetchall()
+        for mess_id, plain_password in mess_officials:
+            hashed_password = generate_password_hash(plain_password)
+            cursor.execute("UPDATE mess_data SET password = %s WHERE mess_id = %s", (hashed_password, mess_id))
+
+        connection.commit()
+
+    print("All passwords have been securely hashed!")
 
 if __name__ == "__main__":
     # generate_students()
-    generate_feedback()
+    # generate_feedback()
     # generate_waste()
     # generate_non_veg_menu()
     # generate_payments()
+    hash_passwords()

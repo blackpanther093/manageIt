@@ -19,15 +19,22 @@ def is_odd_week(date=None):
     return (days_difference // 7) % 2 == 0
 
 def get_current_meal(hour=None):
-    """Return the current meal based on IST time."""
+    """ Deleting the temporary menu and Return the current meal based on IST time."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    query = "DELETE FROM temporary_menu WHERE created_at < CURDATE()"  # or use appropriate condition
+    cursor.execute(query)
+    connection.commit()
+    cursor.close()
+    connection.close()
     if hour is None:
         hour = get_fixed_time().hour  # Ensure function is called
 
     if 0 <= hour < 11:
         return "Breakfast"
-    elif 11 <= hour < 15:
+    elif 11 <= hour < 16:
         return "Lunch"
-    elif 15 <= hour < 18:
+    elif 16 <= hour < 18:
         return "Snacks"
     elif 18 <= hour <= 23:
         return "Dinner"
@@ -150,8 +157,8 @@ def is_valid_student(student_id):
         cursor.close()
         connection.close()
 
-def main():
-    avg_rating()
+# def main():
+#     avg_rating()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

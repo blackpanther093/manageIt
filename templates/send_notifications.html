@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Send Notification</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    @keyframes floatUp {
+      0% {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .flash-message {
+      animation: floatUp 0.6s ease-out;
+    }
+
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+
+    .form-container {
+      padding: 2rem;
+      background-color: #1e1e1e;
+      border-radius: 0.375rem;
+      box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+      max-width: 600px;
+      width: 100%;
+      margin: 2rem auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg-gray-900 min-h-screen text-white flex flex-col items-center px-4 py-4">
+    <!-- Dashboard Button -->
+    <div class="w-full flex justify-between items-center">
+      <a href="{{ url_for('admin_dashboard') }}"
+         class="inline-flex items-center bg-yellow-500 text-white px-6 py-3 m-4 rounded-lg hover:bg-yellow-600 shadow-md">
+        <i class="ph ph-house mr-2"></i> Dashboard
+      </a>
+    </div>
+
+    <!-- Heading -->
+    <h1 class="text-3xl sm:text-4xl font-bold text-white mt-6 mb-8">Send Message</h1>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-container" class="mb-4 w-full max-w-xl">
+      {% for category, message in messages %}
+      <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 {% if category == 'error' %} bg-red-500 {% else %} bg-green-500 {% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Form Container -->
+    <div class="form-container mt-6">
+      <form action="{{ url_for('send_notification') }}" method="POST" class="space-y-4">
+        <label for="message" class="block text-yellow-500 font-semibold">Message:</label>
+        <textarea id="message" name="message" required
+                  class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white"></textarea>
+
+        <label for="recipient_type" class="block text-yellow-500 font-semibold">Recipient:</label>
+        <select id="recipient_type" name="recipient_type" required
+                class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">
+          <option value="student">Students</option>
+          <option value="mess_official">Mess Officials</option>
+          <option value="both">Both</option>
+        </select>
+
+        <button type="submit"
+                class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold">
+          Send
+        </button>
+      </form>
+    </div>
+  </div>
+  <script>
+    // Remove flash messages after 5 seconds
+    setTimeout(() => {
+      let flashMessages = document.getElementById("flash-container");
+      if (flashMessages) {
+        flashMessages.style.transition = "opacity 0.5s ease-out";
+        flashMessages.style.opacity = "0";
+        setTimeout(() => flashMessages.remove(), 500); // Remove from DOM
+      }
+    }, 5000);
+  </script>
+</body>
+
+</html>

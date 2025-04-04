@@ -28,50 +28,49 @@
 
   <!-- Title Section -->
   <div class="text-center mb-4">
-    <h1 class="text-2xl sm:text-3xl font-bold text-white">Payment Details for {{ meal }} on {{ payment_date }}</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">Payment History</h1>
   </div>
 
-  {% if details %}
+  {% if data %}
     <div class="bg-gray-800 shadow-md rounded-lg mt-4 table-container">
       <table class="w-full border-collapse">
         <thead class="bg-yellow-400 hover:bg-yellow-500">
           <tr>
-            <th class="py-2 px-3 border-b text-yellow-900">Student ID</th>
+            <th class="py-2 px-3 border-b text-yellow-900">Date</th>
+            <th class="py-2 px-3 border-b text-yellow-900">Meal</th>
             <th class="py-2 px-3 border-b text-yellow-900">Food Item</th>
             <th class="py-2 px-3 border-b text-yellow-900">Amount (₹)</th>
-            <th class="py-2 px-3 border-b text-yellow-900">Payment Mode</th>
           </tr>
         </thead>
         <tbody>
-          {% for s_id, food_item, amount, payment_mode in details %}
+          {% for date, meal, food_item, amount in data %}
             <tr class="hover:bg-gray-700 transition">
-              <td class="py-2 px-3 border-b text-white">{{ s_id }}</td>
+              <td class="py-2 px-3 border-b text-white">{{ date }}</td>
+              <td class="py-2 px-3 border-b text-white">{{ meal }}</td>
               <td class="py-2 px-3 border-b text-white">{{ food_item }}</td>
               <td class="py-2 px-3 border-b text-white">₹{{ amount }}</td>
-              <td class="py-2 px-3 border-b text-white">{{ payment_mode }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
   {% else %}
-    <p class="text-white text-lg mt-4 text-center">No payment details found for this item.</p>
+    <p class="text-white text-lg mt-4 text-center">No payment details found.</p>
   {% endif %}
 </div>
   <!-- Back to Payment Summary Button -->
-  <div class="mt-4 text-center">
+  <!-- <div class="mt-4 text-center">
     <a href="/review_payment_details" class="inline-flex items-center bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 shadow-md">
       Back to Payment Summary
     </a>
-  </div>
+  </div> -->
 
   <script>
     function redirect_dash() {
       const user_role = "{{ session['role'] }}";
-      if (user_role === 'admin') {
-        window.location.href = '/admin_dashboard';
-      } else if (user_role === 'mess_official') {
-        window.location.href = '/mess_dashboard';
-      } else {
+      if (user_role === 'student') {
+        window.location.href = '/student_dashboard';
+      }
+      else {
         alert("Invalid role. Unable to connect");
       }
     }

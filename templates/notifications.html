@@ -15,8 +15,9 @@
       <!-- Notification List -->
       <ul class="w-full max-w-lg">
         {% for notification in notifications[:20] %} <!-- Limit to top 20 notifications -->
-          <li class="bg-gray-800 p-4 mb-4 rounded-lg shadow-md flex items-center space-x-4">
-            <span class="text-xl">{{ notification }}</span>
+          <li class="bg-gray-800 p-4 mb-4 rounded-lg shadow-md flex flex-col space-y-2">
+            <span class="text-lg">{{ notification[0] }}</span>
+            <span class="text-sm text-gray-400">{{ notification[1].strftime('%B %d, %Y - %H:%M') }}</span> 
           </li>
         {% endfor %}
       </ul>
@@ -26,7 +27,13 @@
     {% endif %}
 
     <!-- Back to Dashboard Button -->
-    <a href="/mess_dashboard" class="mt-8 bg-yellow-500 text-gray-900 px-6 py-2 rounded-lg hover:bg-yellow-600">Back to Dashboard</a>
+    <a href="{{ back_url }}" class="mt-8 bg-yellow-500 text-gray-900 px-6 py-2 rounded-lg hover:bg-yellow-600">
+    {% if back_url == '/mess_dashboard' or back_url == '/student_dashboard' %}
+      Back to Dashboard
+    {% else %}
+      Back to Home
+    {% endif %}
+    </a>
   </div>
 </body>
 </html>

@@ -36,7 +36,7 @@
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=True) %}
       {% if messages %}
-        <div id="flash-container" class="w-full max-w-lg mt-4">
+        <div id="flash-container" class="w-full max-w-lg mb-4 mt-4">
           {% for category, message in messages %}
             <div class="flash-message p-3 rounded-lg text-white text-sm mt-2 
               {% if 'error' in category %} bg-red-500 
@@ -96,6 +96,9 @@
           setTimeout(() => msg.remove(), 500);
         });
       }, 5000);
+      if (window.history.replaceState) {
+      window.history.replaceState(null, null, window.location.href);
+      }
     }
 
     window.onload = removeFlashMessages;
