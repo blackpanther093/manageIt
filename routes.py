@@ -36,65 +36,82 @@ def home():
 # app = Flask(__name__)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        id = request.form.get('id')
-        password = request.form.get('password')
+    if session.get('role') == 'student':
+        return redirect(url_for('student_dashboard'))
+    elif session.get('role') == 'mess_official':
+        return redirect(url_for('mess_dashboard'))
+    elif session.get('role') == 'admin':
+        return redirect(url_for('admin_dashboard'))
+    else:
+        if request.method == 'POST':
+            id = request.form.get('id')
+            password = request.form.get('password')
 
-        connection = get_db_connection()
-        cursor = connection.cursor()
+            connection = get_db_connection()
+            cursor = connection.cursor()
 
-        # Check if the user is a student
-        cursor.execute("SELECT s_id, name, mess, password FROM student WHERE BINARY s_id = %s", (id,))
-        student = cursor.fetchone()
+            # Check if the user is a student
+            cursor.execute("SELECT s_id, name, mess, password FROM student WHERE BINARY s_id = %s", (id,))
+            student = cursor.fetchone()
 
-        if student and check_password_hash(student[3], password):
-            session['student_id'] = student[0]
-            session['student_name'] = student[1]
-            session['mess'] = student[2]
-            session['role'] = 'student'
+            if student and check_password_hash(student[3], password):
+                session['student_id'] = student[0]
+                session['student_name'] = student[1]
+                session['mess'] = student[2]
+                session['role'] = 'student'
+                cursor.close()
+                connection.close()
+                return redirect(url_for('student_dashboard'))
+
+            # Check if the user is a mess official
+            cursor.execute("SELECT mess_id, mess, password FROM mess_data WHERE BINARY mess_id = %s", (id,))
+            mess_official = cursor.fetchone()
+
+            if mess_official and check_password_hash(mess_official[2], password):
+                session['mess_id'] = mess_official[0]
+                session['mess'] = mess_official[1]
+                session['role'] = 'mess_official'
+                # print(session)
+                cursor.close()
+                connection.close()
+                return redirect(url_for('mess_dashboard'))
+
+            # Check if the user is an admin
+            cursor.execute("SELECT admin_id, username, password FROM admin WHERE BINARY admin_id = %s", (id,))
+            admin = cursor.fetchone()
+
+            if admin and check_password_hash(admin[2], password):
+                session['admin_id'] = admin[0]
+                session['admin_name'] = admin[1]
+                session['role'] = 'admin'
+                cursor.close()
+                connection.close()
+                return redirect(url_for('admin_dashboard'))
+
             cursor.close()
             connection.close()
-            return redirect(url_for('student_dashboard'))
-
-        # Check if the user is a mess official
-        cursor.execute("SELECT mess_id, mess, password FROM mess_data WHERE BINARY mess_id = %s", (id,))
-        mess_official = cursor.fetchone()
-
-        if mess_official and check_password_hash(mess_official[2], password):
-            session['mess_id'] = mess_official[0]
-            session['mess'] = mess_official[1]
-            session['role'] = 'mess_official'
-            # print(session)
-            cursor.close()
-            connection.close()
-            return redirect(url_for('mess_dashboard'))
-
-        # Check if the user is an admin
-        cursor.execute("SELECT admin_id, username, password FROM admin WHERE BINARY admin_id = %s", (id,))
-        admin = cursor.fetchone()
-
-        if admin and check_password_hash(admin[2], password):
-            session['admin_id'] = admin[0]
-            session['admin_name'] = admin[1]
-            session['role'] = 'admin'
-            cursor.close()
-            connection.close()
-            return redirect(url_for('admin_dashboard'))
-
-        cursor.close()
-        connection.close()
-        flash("Invalid ID or Password.", 'error')
-        return redirect(url_for('login'))
+            flash("Invalid ID or Password.", 'error')
+            return redirect(url_for('login'))
 
     return render_template('login.html')
 
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
+    role = session.get('role')
     student_id = session.get('student_id')
     student_name = session.get('student_name')
     mess = session.get('mess')
+    
+    if 'role' not in session or session['role'] != 'student':
+        flash ("Access Denied: Only mess officials can access this page.",'error')
+        return redirect(url_for('login'))
+    
+    if not mess:
+        flash ("Error: Mess information not found.",'error')
+        return redirect(url_for('login'))
+    
     meal = get_current_meal()
-    if student_id:
+    if student_id and role == 'student':
         connection = get_db_connection()
         cursor = connection.cursor()
         cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s AND meal = %s", (student_id, mess, meal))
@@ -104,10 +121,6 @@ def feedback():
         if student_id in feedback_given:
             flash("Feedback already submitted for today.", "error")
             return redirect(url_for('home'))
-    
-    if not student_id or not student_name or not mess:
-        flash("Session expired. Please log in again.", "error")
-        return redirect(url_for('home'))
 
     # Time check and meal filtering logic
     current_hour = get_fixed_time().hour
@@ -198,55 +211,6 @@ def feedback():
         student_name=student_name,
         mess=mess
     )
-
-@app.route('/enter-id', methods=['GET', 'POST'])
-def enter_id():
-    student_id = session.get('student_id')  # Safe way to check if logged in
-    # student_name = session.get('student_name')
-    mess = session.get('mess')
-    meal = get_current_meal()
-    if student_id:
-        connection = get_db_connection()
-        cursor = connection.cursor()
-        cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s AND meal = %s", (student_id, mess, meal))
-        feedback_given = set(row[0] for row in cursor.fetchall())
-        cursor.close()
-        connection.close()
-        if student_id in feedback_given:
-            flash("Feedback already submitted for today.", "error")
-            return redirect(url_for('home'))
-        else:
-           return redirect(url_for('feedback'))
-        
-    if request.method == 'POST':
-        student_id = request.form.get('s_id')
-
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor()
-            cursor.execute("SELECT name, mess FROM student WHERE s_id = %s", (student_id,))
-            data = cursor.fetchone()
-
-            if not data:
-                flash("Invalid student ID. Please try again.", "error")
-                return redirect(url_for('enter_id'))
-
-            student_name, mess = data
-            session['student_id'] = student_id
-            session['student_name'] = student_name
-            session['mess'] = mess
-
-            return redirect(url_for('feedback'))  # All set, go to feedback
-
-        except Exception as e:
-            flash(f"Database error: {e}", "error")
-            return redirect(url_for('enter_id'))
-
-        finally:
-            cursor.close()
-            connection.close()
-
-    return render_template('enter_id.html')  # First-time load or failed submission
 
 @app.route('/waste', methods=['GET', 'POST'])
 def waste():
@@ -454,6 +418,7 @@ def delete_item():
         cursor.close()
         connection.close()
 
+#mess dashboard
 @app.route('/mess_dashboard')
 def mess_dashboard():
     # if session.get('role') != 'mess_official':
@@ -467,14 +432,48 @@ def mess_dashboard():
     mess_name = session['mess']
     # print(mess_name)
     username = session.get('student_name', 'Mess Official')
-    profile_image_url = "/static/profile_default.png"  # Change to actual profile image URL if available 
-
+    
     return render_template('mess_dashboard.html', 
                             mess_id=mess_id, 
                             mess_name=mess_name, 
                             username=username,
-                            profile_image_url=profile_image_url,
     )
+
+@app.route('/mess_switch_activity')
+def mess_switch_activity():
+    if 'mess_id' not in session or session.get('role') != 'mess_official':
+        flash("Access Denied. Please login again.", 'error')
+        return redirect(url_for('login'))
+
+    mess_name = session['mess']
+    # username = session.get('student_name', 'Mess Official')
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    # Students requesting to join this mess
+    cur.execute("""
+        SELECT s_id
+        FROM mess_switch_requests
+        WHERE desired_mess = %s
+    """, (mess_name,))
+    joined_students = cur.fetchall()
+
+    # Students currently in this mess and switching out
+    cur.execute("""
+        SELECT s_id
+        FROM mess_switch_requests
+        WHERE desired_mess != %s 
+    """, (mess_name,))
+    left_students = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template('mess_switch_activity.html',
+                           mess_name=mess_name,
+                           joined_students=joined_students,
+                           left_students=left_students)
 
 @app.route('/add_payment_details', methods=['GET', 'POST'])
 def add_payment():
@@ -651,101 +650,138 @@ def review_waste_feedback():
         connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
 
-        # Fetch waste data for the last 30 days
+        # Fetch waste and feedback from last 30 days
         cursor.execute("""
-            SELECT w.waste_date, w.floor, w.meal, wd.food_item, wd.leftover_amount, w.total_waste
+            SELECT w.waste_date, w.floor, w.meal, wd.food_item, wd.leftover_amount
             FROM waste_summary w
             JOIN waste_details wd ON w.waste_id = wd.waste_id
-            WHERE w.waste_date >= CURDATE() - INTERVAL 30 DAY;
+            WHERE w.waste_date >= CURDATE() - INTERVAL 30 DAY
         """)
         waste_data = cursor.fetchall()
-        
-        if not waste_data:
-            connection.close()
-            return render_template('review_waste_feedback.html', no_data=True)
-        
-        # Convert data to DataFrame for analysis
-        df = pd.DataFrame(waste_data)
-        
-        # Convert waste_date to Pandas Timestamp and remove timezone info
-        df['waste_date'] = pd.to_datetime(df['waste_date']).dt.tz_localize(None)
-        
-        # Determine mess based on floor names
-        df['mess'] = df['floor'].apply(lambda x: 'mess1' if x in ['Ground', 'First'] else 'mess2')
-        
-        # Total Waste Comparison Pie Chart (Mess1 vs Mess2)
-        total_waste_pie_fig = px.pie(df, names='mess', values='total_waste', title='Total Waste Distribution (Mess1 vs Mess2)')
-        total_waste_pie = total_waste_pie_fig.to_html(full_html=False)
-        
-        # Pie Chart for Floor-wise Waste Distribution (using leftover_amount)
-        floor_pie_fig = px.pie(df, names='floor', values='leftover_amount', title='Floor-wise Waste Distribution')
-        floor_pie_plot = floor_pie_fig.to_html(full_html=False)
-        
-        # Line Charts for Odd and Even Week Waste Trends using x.date() for is_odd_week()
-        df['week_type'] = df['waste_date'].apply(lambda x: 'Odd' if is_odd_week(x.date()) else 'Even')
-        odd_fig = px.line(df[df['week_type'] == 'Odd'], x='waste_date', y='total_waste', color='floor', title='Odd Week Waste Trend')
-        even_fig = px.line(df[df['week_type'] == 'Even'], x='waste_date', y='total_waste', color='floor', title='Even Week Waste Trend')
-        odd_plot = odd_fig.to_html(full_html=False)
-        even_plot = even_fig.to_html(full_html=False)
-        
-        # Line Chart with 7-Day Moving Average of Waste
-        df['moving_avg'] = df['total_waste'].rolling(window=7, min_periods=1).mean()
-        moving_avg_fig = px.line(df, x='waste_date', y='moving_avg', color='floor', title='7-Day Moving Average of Waste')
-        moving_avg_plot = moving_avg_fig.to_html(full_html=False)
-        
-        # Scatter Plot for Correlation Analysis: (Food Rating vs Waste)
-        scatter_fig = px.scatter(df, x='food_item', y='leftover_amount', color='floor',
-                                 size='leftover_amount', title='Correlation Analysis: Food Rating vs Waste')
-        correlation_plot = scatter_fig.to_html(full_html=False)
-        
-        # Predictive Analysis: Simple Forecast using the latest moving average as a placeholder
-        last_date = df['waste_date'].max()
-        future_dates = pd.date_range(last_date, periods=8, freq='D')[1:]
-        last_avg = df['moving_avg'].iloc[-1]
-        predicted_waste = [last_avg for _ in range(len(future_dates))]
-        pred_df = pd.DataFrame({'waste_date': future_dates, 'predicted_waste': predicted_waste})
-        predictive_fig = px.line(pred_df, x='waste_date', y='predicted_waste', title='Predictive Analysis: Future Waste Trends')
-        predictive_plot = predictive_fig.to_html(full_html=False)
-        
-        # Use get_fixed_time() and convert its return value to a Pandas Timestamp for calculations
-        current_time = get_fixed_time()  # Returns a datetime object in IST
-        current_ts = pd.Timestamp(current_time).tz_localize(None)
-        current_week_start = current_ts - pd.Timedelta(days=current_ts.weekday())
-        two_weeks_ago = current_ts - pd.Timedelta(days=14)
-        
-        # Top 5 Most Wasted Food Items This Week (by leftover_amount)
-        df_current_week = df[df['waste_date'] >= current_week_start]
-        top5_df = df_current_week.groupby('food_item', as_index=False)['leftover_amount'].sum().nlargest(5, 'leftover_amount')
-        top5_waste_list = top5_df.to_dict(orient='records')
-        
-        # Best Waste-Reduction Day over the past 2 weeks and its menu
-        df_two_weeks = df[df['waste_date'] >= two_weeks_ago]
-        day_waste = df_two_weeks.groupby('waste_date', as_index=False)['total_waste'].mean()
-        best_day_row = day_waste.nsmallest(1, 'total_waste').iloc[0]
-        best_day = pd.to_datetime(best_day_row['waste_date']).strftime('%A, %Y-%m-%d')
-        best_day_week_type = 'Odd' if is_odd_week(pd.to_datetime(best_day_row['waste_date']).date()) else 'Even'
-        
-        # Fetch the menu for the best day using your get_menu() function
-        best_day_menu = get_menu(best_day_row['waste_date'])
-        
+
+        cursor.execute("""
+            SELECT fs.feedback_date, fs.meal, fs.mess, fd.food_item, fd.rating
+            FROM feedback_summary fs
+            JOIN feedback_details fd ON fs.feedback_id = fd.feedback_id
+            WHERE fs.feedback_date >= CURDATE() - INTERVAL 30 DAY
+        """)
+        feedback_data = cursor.fetchall()
+
         connection.close()
-        
+
+        if not waste_data or not feedback_data:
+            return render_template('review_waste_feedback.html', no_data=True)
+
+        # Convert to DataFrames
+        waste_df = pd.DataFrame(waste_data)
+        feedback_df = pd.DataFrame(feedback_data)
+
+        # Normalize date using IST
+        today = pd.Timestamp(get_fixed_time().replace(tzinfo=None)).normalize()
+        waste_df['waste_date'] = pd.to_datetime(waste_df['waste_date']).dt.normalize()
+        feedback_df['feedback_date'] = pd.to_datetime(feedback_df['feedback_date']).dt.normalize()
+        waste_df['day_name'] = waste_df['waste_date'].dt.day_name()
+        feedback_df['day_name'] = feedback_df['feedback_date'].dt.day_name()
+
+
+        feedback_df['week_type'] = feedback_df['feedback_date'].apply(lambda x: 'Odd' if is_odd_week(x.date()) else 'Even')
+
+        days_order = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        feedback_df['day_name'] = pd.Categorical(feedback_df['day_name'], categories=days_order, ordered=True)
+
+        # Add mess column to waste_df
+        waste_df['mess'] = waste_df['floor'].apply(lambda x: 'mess1' if x in ['Ground', 'First'] else 'mess2')
+
+        # 📊 1. Pie chart: Floor-wise waste
+        floor_pie = px.pie(waste_df, names='floor', values='leftover_amount', title='Waste Distribution by Floor')
+        floor_pie_plot = floor_pie.to_html(full_html=False, config={'displayModeBar': False})
+
+        # 📊 2. Bar chart: Mess1 vs Mess2 total waste
+        mess_waste_df = waste_df.groupby('mess')['leftover_amount'].sum().reset_index()
+        mess_waste = px.bar(mess_waste_df, x='mess', y='leftover_amount', title='Total Waste: Mess1 vs Mess2', color='mess')
+        mess_waste_plot = mess_waste.to_html(full_html=False, config={'displayModeBar': False})
+
+        #3. Line plot: Average feedback ratings by day
+        # plots = {}
+
+        # for mess_name in feedback_df['mess'].unique():
+        mess_name = session['mess']
+        mess_df = feedback_df[feedback_df['mess'] == mess_name]
+
+        avg_ratings = mess_df.groupby(['week_type', 'day_name'])['rating'].mean().reset_index()
+
+        fig = px.line(
+            avg_ratings,
+            x='day_name',
+            y='rating',
+            color='week_type',
+            markers=True,
+            title=f"Average Feedback Ratings by Day ({mess_name})",
+            labels={'rating': 'Average Rating', 'day_name': 'Day of Week', 'week_type': 'Week Type'},
+            category_orders={'day_name': days_order}
+        )
+        fig.update_layout(yaxis=dict(range=[1, 5]))
+
+        plots = fig.to_html(full_html=False, config={'displayModeBar': False})
+
+        # return render_template('feedback_line_plot.html', plots=plots)
+
+        # 📊 4. Top 5 most wasted food items
+        top5_df = waste_df.groupby('food_item')['leftover_amount'].sum().sort_values(ascending=False).head(5)
+        top5_waste_list = top5_df.reset_index().values.tolist()
+
+        # ⏱️ Only include data that is a multiple of 14 days from today
+        def is_multiple_of_14_days_ago(past_date, ref_date):
+            delta = (ref_date - past_date).days
+            return delta % 14 == 0 and 0 <= delta <= 30
+
+        waste_df['use_for_prediction'] = waste_df['waste_date'].apply(lambda d: is_multiple_of_14_days_ago(d, today))
+        feedback_df['use_for_prediction'] = feedback_df['feedback_date'].apply(lambda d: is_multiple_of_14_days_ago(d, today))
+
+        waste_relevant = waste_df[waste_df['use_for_prediction']]
+        feedback_relevant = feedback_df[feedback_df['use_for_prediction']]
+
+        # Clean food and meal
+        waste_relevant['food_item'] = waste_relevant['food_item'].str.strip().str.lower()
+        waste_relevant['meal'] = waste_relevant['meal'].str.strip().str.lower()
+        feedback_relevant['food_item'] = feedback_relevant['food_item'].str.strip().str.lower()
+        feedback_relevant['meal'] = feedback_relevant['meal'].str.strip().str.lower()
+
+        # Merge on food and meal only (ignore date)
+        # merged_df = pd.merge(waste_relevant, feedback_relevant, on=['food_item', 'meal'], how='inner')
+        # merged_df['waste_score'] = merged_df['leftover_amount'] * (6 - merged_df['rating'])
+
+        print("Waste dates considered:", waste_relevant['waste_date'].unique())
+        print("Feedback dates considered:", feedback_relevant['feedback_date'].unique())
+        print("🧪 Waste Items:", waste_relevant['food_item'].unique())
+        print("🧪 Feedback Items:", feedback_relevant['food_item'].unique())
+
+        if not waste_relevant.empty and not feedback_relevant.empty:
+            # Merge based on food item and meal only (ignore exact dates since it's cyclic)
+            merged_df = pd.merge(waste_relevant, feedback_relevant, on=['food_item', 'meal'], how='inner')
+            # merged_df['waste_score'] = merged_df['leftover_amount'] * (6 - merged_df['rating'])
+            if not merged_df.empty:
+                merged_df['waste_score'] = merged_df['leftover_amount'] * (6 - merged_df['rating'])
+                top3 = merged_df.drop_duplicates(subset=['food_item']) \
+                    .sort_values(by='waste_score', ascending=False).head(3)
+                predicted_worst_food = top3[['food_item', 'meal', 'waste_score']].values.tolist()
+            else:
+                predicted_worst_food = "No common food items found in waste and feedback data"
+        else:
+            predicted_worst_food = "Insufficient data for 14-day interval analysis"
+
         return render_template('review_waste_feedback.html',
                                no_data=False,
-                               total_waste_pie=total_waste_pie,
                                floor_pie_plot=floor_pie_plot,
-                               odd_plot=odd_plot,
-                               even_plot=even_plot,
-                               moving_avg_plot=moving_avg_plot,
-                               correlation_plot=correlation_plot,
-                               predictive_plot=predictive_plot,
+                               mess_waste_plot=mess_waste_plot,
+                               plots=plots,
                                top_5_wasted_food=top5_waste_list,
-                               best_day=best_day,
-                               best_day_week_type=best_day_week_type,
-                               best_day_menu=best_day_menu)
+                               predicted_worst_food=predicted_worst_food,
+                               today=today.date())
+
     except Exception as e:
         print(f"Error: {e}")
-        flash(f"An error occurred while fetching waste data: {e}", 'error')
+        flash(f"An error occurred: {e}", 'error')
         return redirect(url_for('mess_dashboard'))
 
 @app.route('/logout')
@@ -842,6 +878,7 @@ def profile():
     table = None
     id_column = None
     columns = None
+    mess_switch_enabled = False
 
     if role == 'student':
         user_id = session.get('student_id')
@@ -879,7 +916,18 @@ def profile():
         # Convert fetched data to dictionary
         user_data = dict(zip([desc[0] for desc in cursor.description], user_data))
 
-        return render_template('profile.html', user_data=user_data, role=role)
+        if role == 'student':
+            try:
+                toggle_cursor = connection.cursor(dictionary=True)
+                toggle_cursor.execute("SELECT is_enabled FROM feature_toggle LIMIT 1")
+                toggle = toggle_cursor.fetchone()
+                if toggle and toggle['is_enabled']:
+                    mess_switch_enabled = True
+                toggle_cursor.close()
+            except Exception as e:
+                print("Error fetching mess switch toggle:", e)
+        
+        return render_template('profile.html', user_data=user_data, role=role, mess_switch_enabled=mess_switch_enabled)
 
     except Exception as e:
         flash(f"Database error: {e}", "error")
@@ -992,10 +1040,96 @@ def select_mess():
 def admin_dashboard():
     if 'admin_id' not in session:
         return redirect(url_for('login'))
-    # if session['admin_mess'] not in ['mess1', 'mess2']:
-    #     return redirect(url_for('select_mess'))
-    # mess_name = session['admin_mess']
-    return render_template('admin_dashboard.html')
+    toggle_status = False  # Default fallback
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT is_enabled FROM feature_toggle LIMIT 1")
+        toggle = cur.fetchone()
+        if toggle:
+            toggle_status = toggle['is_enabled']
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("Error fetching toggle status:", e)
+    return render_template('admin_dashboard.html', mess_switch_enabled=toggle_status)
+
+@app.route('/toggle_mess_switch', methods=['GET', 'POST'])
+def toggle_mess_switch():
+    if 'admin_id' not in session:
+        flash('Unauthorized access. Please login.', 'error')
+        return redirect(url_for('login'))
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(dictionary=True)
+
+        # Fetch current toggle status and timestamps
+        cur.execute("SELECT is_enabled, enabled_at FROM feature_toggle LIMIT 1")
+        toggle = cur.fetchone()
+
+        if not toggle:
+            flash('Feature toggle record not found.', 'error')
+        else:
+            created_at = get_fixed_time().strftime('%Y-%m-%d %H:%M:%S')
+            current_status = toggle['is_enabled']
+            enabled_time = toggle.get('enabled_at')
+
+            if current_status:
+                # 1. Turn OFF
+                cur.execute("""
+                    UPDATE feature_toggle
+                    SET is_enabled = FALSE,
+                        disabled_at = %s
+                """, (created_at,))
+                
+                # 2. Apply mess switch for students who submitted during enabled time
+                if enabled_time:
+                    cur.execute("""
+                        SELECT s_id, desired_mess 
+                        FROM mess_switch_requests 
+                        WHERE created_at BETWEEN %s AND %s
+                    """, (enabled_time, created_at))
+                    requests = cur.fetchall()
+
+                    for req in requests:
+                        cur.execute("""
+                            UPDATE student 
+                            SET mess = %s 
+                            WHERE s_id = %s
+                        """, (req['desired_mess'], req['s_id']))
+                    
+                    cur.execute("DELETE FROM mess_switch_requests WHERE created_at < %s",(enabled_time,))
+                flash("Mess switching feature has been turned OFF and pending requests have been processed.", "info")
+
+            else:
+                # Turn ON
+                cur.execute("""
+                    UPDATE feature_toggle
+                    SET is_enabled = TRUE,
+                        enabled_at = %s,
+                        disabled_at = NULL
+                """, (created_at,))
+                flash("Mess switching feature has been turned ON", "success")
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print("Error toggling mess switch:", traceback.format_exc())
+        flash('Something went wrong while updating the feature toggle.', 'error')
+
+        try:
+            if conn:
+                conn.rollback()
+                cur.close()
+                conn.close()
+        except:
+            pass  # suppress secondary cleanup errors
+
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/send_notification', methods=['GET','POST'])
 def send_notification():
@@ -1368,15 +1502,99 @@ def student_dashboard():
     # if not monthly_avg_ratings:
     #     print("No ratings available for last month.")
     # Clamp the avg_rating to be between 1 and 5
-    connection.close()
+    # connection.close()
     # flashed_messages = get_flashed_messages(with_categories=True)
-    session.pop('_flashes', None)
+    # session.pop('_flashes', None)
+    # Check if mess switching is enabled
+    connection.close()
+
     return render_template('student_dashboard.html',
                            greeting=greeting,
                            feedback_status=feedback_status,
                            leaderboard=leaderboard,
                            waste_insight=waste_insight,
                            monthly_avg_ratings=monthly_avg_ratings)
+
+@app.route('/switch-mess', methods=['POST'])
+def switch_mess():
+    if 'student_id' not in session or session.get('role') != 'student':
+        flash("Unauthorized access.", "error")
+        return redirect(url_for('login'))
+
+    student_id = session['student_id']
+    current_mess = session['mess']
+    desired_mess = 'mess2' if current_mess == 'mess1' else 'mess1'
+    mess_name = 'Mess Sai' if desired_mess == 'mess1' else 'Mess Sheila'
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Get current feature toggle info
+        cursor.execute("SELECT enabled_at, disabled_at FROM feature_toggle LIMIT 1")
+        toggle = cursor.fetchone()
+
+        if not toggle or not toggle['enabled_at']:
+            flash("Mess switching feature is not currently active.", "error")
+            return redirect(url_for('profile'))
+
+        enabled_at = toggle['enabled_at']
+        disabled_at = toggle['disabled_at']
+        now = get_fixed_time().replace(tzinfo=None)
+        # created_at = get_fixed_time().strftime('%Y-%m-%d %H:%M:%S')
+        # ✅ Allow only if now >= enabled_at and toggle is still ON
+        if now < enabled_at or disabled_at is not None:
+            flash("Mess switching is currently not allowed.", "error")
+            return redirect(url_for('profile'))
+
+        # Check if student already submitted a request
+        cursor.execute("SELECT created_at FROM mess_switch_requests WHERE s_id = %s", (student_id,))
+        existing_request = cursor.fetchone()
+
+        if existing_request:
+            request_time = existing_request['created_at']
+            if request_time < enabled_at:
+                # ✅ Their previous request was before toggle ON => update their mess directly
+                # cursor.execute("UPDATE student SET mess = %s WHERE s_id = %s", (desired_mess, student_id))
+                cursor.execute("DELETE FROM mess_switch_requests WHERE s_id = %s", (student_id,))
+                conn.commit()
+                # session['mess'] = desired_mess
+                # return redirect(url_for('profile'))
+            else:
+                flash("Your mess switch request is already under consideration.", "error")
+                return redirect(url_for('profile'))
+
+        # ✅ Check mess capacity
+        cursor.execute("SELECT capacity FROM mess_data WHERE mess = %s", (desired_mess,))
+        mess_capacity = cursor.fetchone()['capacity']
+
+        cursor.execute("SELECT COUNT(*) AS count FROM student WHERE mess = %s", (desired_mess,))
+        mess_count = cursor.fetchone()['count']
+
+        if mess_count >= mess_capacity:
+            flash(f"{mess_name} has reached its maximum capacity.", "error")
+            return redirect(url_for('profile'))
+
+        # ✅ Insert new switch request
+        created_at = now.strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute("""
+            INSERT INTO mess_switch_requests (s_id, desired_mess, created_at)
+            VALUES (%s, %s, %s)
+        """, (student_id, desired_mess, created_at))
+        conn.commit()
+
+        flash("Your mess switch request has been submitted successfully.", "success")
+        return redirect(url_for('profile'))
+
+    except Exception as e:
+        print("Error in switch_mess:", e)
+        flash("An error occurred while processing your request.", "error")
+        conn.rollback()
+        return redirect(url_for('profile'))
+
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.route('/public-notifications')
 def public_notifications():

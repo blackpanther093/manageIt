@@ -20,37 +20,33 @@
 </head>
 <body class="bg-gray-900 font-sans min-h-screen flex flex-col items-center p-8 text-white">
 
-<!-- Top Navigation -->
-<!-- Top Navigation -->
-<!-- Full Width Header -->
-<header class="w-full bg-gray-900 shadow-md py-3 px-6 mb-4">
-  <div class="max-w-6xl mx-auto flex justify-between items-center">
-
-    <!-- Home Button -->
-    <a href="{{ url_for('home') }}" class="flex items-center gap-2 bg-yellow-500 text-gray-900 px-3 py-1.5 rounded-full hover:bg-yellow-600 transition text-sm font-medium">
-      <i class="ph ph-house text-lg"></i>
-      <span>Home</span>
-    </a>
-
-    <!-- Right Side -->
-    <div class="flex items-center gap-3">
-
-      <!-- Logout -->
-      <a href="{{ url_for('logout') }}" class="flex items-center gap-2 bg-red-500 text-gray-900 px-3 py-1.5 rounded-full hover:bg-red-600 transition text-sm font-medium">
-        <i class="ph ph-sign-out text-lg"></i>
-        <span>Logout</span>
+  <header class="w-full bg-gray-900 shadow-md py-4 px-4 sm:px-6 mb-6">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+  
+      <!-- Left: Home Button -->
+      <a href="{{ url_for('home') }}" class="flex items-center gap-2 text-sm font-semibold bg-yellow-500 text-gray-900 px-4 py-2 rounded-full hover:bg-yellow-600 transition">
+        <i class="ph ph-house text-lg"></i>
+        <span class="hidden sm:inline">Home</span>
       </a>
-
-      <!-- Profile -->
-      <a href="/profile" class="flex items-center gap-2 bg-gray-900 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
-        <img src="{{ profile_image_url }}" alt="Profile" class="w-8 h-8 rounded-full border border-yellow-500 shadow-sm" />
-        <span class="text-yellow-400 text-sm font-medium">{{ username }}</span>
-      </a>
-
+  
+      <!-- Right: Profile + Logout -->
+      <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-end">
+  
+        <!-- Profile -->
+        <a href="/profile" class="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-full transition border border-gray-700">
+          <img src="{{ url_for('static', filename='profile.png') }}" alt="Profile" class="w-8 h-8 rounded-full border-2 border-yellow-400 shadow-sm" />
+          <span class="text-yellow-300 text-sm font-medium truncate max-w-[100px] sm:max-w-[160px]">{{ username }}</span>
+        </a>
+  
+        <!-- Logout -->
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-full transition">
+          <i class="ph ph-sign-out text-lg"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </a>
+      </div>
     </div>
-  </div>
-</header>
-    
+  </header>
+      
   <h1 class="text-4xl font-bold text-white mb-12">Admin Dashboard</h1>
   <!-- greetings -->
   {% with messages = get_flashed_messages(with_categories=True) %}
@@ -114,6 +110,36 @@
         <p class="text-gray-300">Send notifications to student or mess_official</p>
       </div>
     </a>
+
+    <form action="{{ url_for('toggle_mess_switch') }}" method="POST" class="block p-6 bg-gray-800 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300 flex items-center">
+      <button type="submit" class="flex items-center w-full text-left">
+        <i class="ph text-3xl mr-4 
+      {% if mess_switch_enabled %}
+        ph-toggle-right text-green-500
+      {% else %}
+        ph-toggle-left text-white
+      {% endif %}">
+      </i>
+        <div>
+          <h2 class="text-xl font-semibold text-yellow-400">
+            {% if mess_switch_enabled %}
+              Disable Mess Switching
+            {% else %}
+              Enable Mess Switching
+            {% endif %}
+          </h2>
+          <p class="text-gray-300">
+            {% if mess_switch_enabled %}
+              Turn off mess switching feature for students
+            {% else %}
+              Turn on mess switching feature for students
+            {% endif %}
+          </p>
+        </div>
+      </button>
+    </form>
+
+
   </div>
 
   <!-- Fixed "Select Mess" Button -->

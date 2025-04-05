@@ -15,6 +15,7 @@
       overflow-x: auto;
       max-width: 100%;
     }
+    
   </style>
 </head>
 <body class="bg-gray-900 font-sans sm:p-4 p-2">
@@ -24,6 +25,37 @@
     <button onclick="redirect_dash()" class="inline-flex items-center bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 shadow-md">
       <i class="ph ph-house mr-2"></i> Dashboard
     </button>
+  </div>
+
+  <div class="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message flex items-start gap-3 p-4 rounded-lg shadow-md text-white text-sm animate-fade-in-down
+                        {% if category == 'error' %} bg-red-500 {% else %} bg-green-500 {% endif %}">
+              <!-- Icon -->
+              {% if category == 'error' %}
+                <svg class="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              {% else %}
+                <svg class="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M5 13l4 4L19 7" />
+                </svg>
+              {% endif %}
+  
+              <!-- Message -->
+              <p class="flex-1">
+                {{ message }}
+              </p>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
   </div>
 
   <!-- Title Section -->
@@ -74,6 +106,18 @@
         alert("Invalid role. Unable to connect");
       }
     }
+    // Auto-hide flash messages after 3 seconds
+    document.addEventListener("DOMContentLoaded", function () {
+      let flashMessages = document.querySelectorAll(".flash-message");
+      flashMessages.forEach(msg => {
+        msg.style.display = "block";
+        msg.style.opacity = "1";
+        setTimeout(() => {
+          msg.style.opacity = "0";
+          setTimeout(() => msg.style.display = "none", 500);
+        }, 3000);
+      });
+    });
   </script>
 </body>
 </html>

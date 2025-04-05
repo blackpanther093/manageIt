@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mess Switch Activity</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body {
+      overflow-x: hidden;
+      background-color: #1a202c;
+      color: white;
+    }
+    th, td {
+      color: white;
+    }
+    .table-container {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body class="font-sans sm:p-4 p-2">
+
+  <!-- Header Section -->
+  <div class="flex justify-between items-center mb-4">
+    <button onclick="redirect_dash()" class="inline-flex items-center bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 shadow-md">
+      <i class="ph ph-house mr-2"></i> Dashboard
+    </button>
+  </div>
+
+  <!-- Title -->
+  <div class="text-center mb-4">
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">
+      Mess Switch Activity -
+      {% if mess_name == 'mess1' %}
+        Mess Sai
+      {% elif mess_name == 'mess2' %}
+        Mess Sheila
+      {% else %}
+        {{ mess_name }}
+      {% endif %}
+    </h1>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="flex justify-center mb-6">
+    <input type="text" id="searchInput" placeholder="Search student ID..." 
+           class="px-4 py-2 w-80 rounded-lg shadow-inner text-black focus:outline-none" 
+           onkeyup="filterTables()">
+  </div>
+
+  <!-- Switch Tables -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
+    
+    <!-- Joined -->
+    <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
+      <h2 class="text-xl font-semibold text-yellow-400 mb-2">✅ Students Switching IN</h2>
+      {% if joined_students %}
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-yellow-400">
+              <th class="py-2 px-3 text-yellow-900 text-left">Student ID</th>
+            </tr>
+          </thead>
+          <tbody id="joinedTable">
+            {% for student in joined_students %}
+              <tr class="hover:bg-gray-700 transition">
+                <td class="py-2 px-3 border-b">{{ student.s_id }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-gray-400">No students are currently switching in.</p>
+      {% endif %}
+    </div>
+
+    <!-- Left -->
+    <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">🔴 Students Switching OUT</h2>
+      {% if left_students %}
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-yellow-400">
+              <th class="py-2 px-3 text-yellow-900 text-left">Student ID</th>
+            </tr>
+          </thead>
+          <tbody id="leftTable">
+            {% for student in left_students %}
+              <tr class="hover:bg-gray-700 transition">
+                <td class="py-2 px-3 border-b">{{ student.s_id }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-gray-400">No students are currently switching out.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    function redirect_dash() {
+      const user_role = "{{ session['role'] }}";
+      if (user_role === 'mess_official') {
+        window.location.href = '/mess_dashboard';
+      } else {
+        alert("Unauthorized Access. Redirecting to login.");
+        window.location.href = '/login';
+      }
+    }
+
+    function filterTables() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const joinedRows = document.querySelectorAll("#joinedTable tr");
+      const leftRows = document.querySelectorAll("#leftTable tr");
+
+      joinedRows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? '' : 'none';
+      });
+
+      leftRows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

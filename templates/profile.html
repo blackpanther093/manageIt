@@ -2,10 +2,10 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Profile</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
     * {
       margin: 0;
@@ -19,46 +19,86 @@
       color: #ffffff;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
+      justify-content: center;
+      min-height: 100vh;
       padding: 20px;
+      position: relative;
     }
 
     .flash-messages {
-      position: absolute;
+      position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      min-width: 300px;
-      max-width: 400px;
+      min-width: 280px;
+      max-width: 90%;
       text-align: center;
       padding: 10px 15px;
       border-radius: 8px;
       font-size: 1em;
       display: none;
       opacity: 0;
+      z-index: 9999;
       transition: opacity 0.5s ease-in-out;
     }
 
-    .flash-success { background: #1db954; color: #fff; }
-    .flash-error { background: #e74c3c; color: #fff; }
+    .flash-success {
+      background: #2ecc71;
+      color: #fff;
+    }
+
+    .flash-error {
+      background: #e74c3c;
+      color: #fff;
+    }
+
+    .change-mess-btn-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .change-mess-btn {
+      background: #6c63ff;
+      color: #fff;
+      padding: 10px 16px;
+      font-size: 0.9em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease-in-out;
+      text-decoration: none;
+    }
+
+    .change-mess-btn:hover {
+      background: #574dcf;
+    }
 
     .profile-container {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(10px);
       border-radius: 15px;
       padding: 30px;
-      width: 90%;
-      max-width: 400px;
+      width: 100%;
+      max-width: 420px;
       text-align: center;
-      box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
+      box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.05);
       animation: fadeIn 0.5s ease-in-out;
+      margin-top: 80px;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     h2 {
@@ -74,7 +114,7 @@
 
     .info span {
       font-weight: 600;
-      color: #1db954;
+      color: #8ab4f8;
     }
 
     .btn {
@@ -90,40 +130,67 @@
     }
 
     .btn-primary {
-      background: #1db954;
+      background: #6c63ff;
       color: #fff;
     }
 
     .btn-primary:hover {
-      background: #17a74c;
+      background: #574dcf;
     }
 
-    /* Dashboard Button */
     .dashboard-container {
-      margin-top: 20px;
+      margin-top: 25px;
       text-align: center;
     }
 
     .btn-dashboard {
-      background: #bcaa09;
+      background: #6b9b1f;
       color: #fff;
       padding: 16px 20px;
       font-size: 1.1em;
       width: 250px;
       text-align: center;
+      border-radius: 10px;
       display: inline-block;
     }
 
     .btn-dashboard:hover {
-      background: #c8ab0a;
+      background: #7fa709;
     }
 
     @media (max-width: 480px) {
-      .profile-container { padding: 20px; }
-      h2 { font-size: 1.5em; }
-      .info { font-size: 1em; }
-      .btn { font-size: 0.9em; padding: 10px; }
-      .btn-dashboard { width: 90%; font-size: 1em; }
+      .profile-container {
+        padding: 20px;
+        margin-top: 100px;
+      }
+
+      h2 {
+        font-size: 1.4em;
+      }
+
+      .info {
+        font-size: 1em;
+      }
+
+      .btn {
+        font-size: 0.95em;
+        padding: 10px;
+      }
+
+      .btn-dashboard {
+        width: 90%;
+        font-size: 1em;
+      }
+
+      .change-mess-btn {
+        font-size: 0.8em;
+        padding: 8px 12px;
+      }
+
+      .change-mess-btn-container {
+        top: 10px;
+        right: 10px;
+      }
     }
   </style>
 </head>
@@ -132,12 +199,21 @@
 
   <!-- Flash Messages -->
   {% with messages = get_flashed_messages(with_categories=True) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="flash-messages flash-{{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash-messages flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
   {% endwith %}
+
+  <!-- Change Mess Button -->
+  {% if role == 'student' and mess_switch_enabled %}
+    <div class="change-mess-btn-container">
+      <form method="POST" action="{{ url_for('switch_mess') }}">
+        <button type="submit" class="change-mess-btn">Change Mess</button>
+      </form>
+    </div>
+  {% endif %}
 
   <div class="profile-container">
     <h2>User Profile</h2>
@@ -149,7 +225,7 @@
     <a href="{{ url_for('update_password') }}" class="btn btn-primary">Change Password</a>
   </div>
 
-  <!-- Dashboard Button (Outside Profile Container) -->
+  <!-- Dashboard Button -->
   <div class="dashboard-container">
     {% if role == 'student' %}
       <a href="{{ url_for('student_dashboard') }}" class="btn btn-dashboard">Go to Dashboard</a>
@@ -162,7 +238,7 @@
 
   <script>
     // Auto-hide flash messages after 3 seconds
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
       let flashMessages = document.querySelectorAll(".flash-messages");
       flashMessages.forEach(msg => {
         msg.style.display = "block";

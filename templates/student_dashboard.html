@@ -60,6 +60,7 @@
         opacity: 0;
       }
     }
+
   </style>
 </head>
 
@@ -91,7 +92,7 @@
 
         <!-- Profile -->
         <a href="/profile" class="flex items-center space-x-2 hover:underline">
-          <img src="{{ profile_image_url }}" alt="Profile" class="w-10 h-10 rounded-full border border-yellow-500" />
+          <img src="{{url_for('static', filename='profile.png')}}" alt="Profile" class="w-10 h-10 rounded-full border border-yellow-500" />
           <span class="text-yellow-500 font-semibold">{{ username }}</span>
         </a>
       </div>
@@ -99,28 +100,6 @@
 
   </header>
 
-
-  <!-- Flash Messages Section -->
-  <div class="p-6" id="flash-container">
-    {% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-    {% set seen_messages = seen_messages if seen_messages is defined else [] %}
-    <div class="space-y-4">
-      {% for category, message in messages %}
-      {% if message not in seen_messages %}
-      <div class="flash-message 
-                {% if category == 'success' %} bg-green-500
-                {% elif category == 'error' %} bg-red-500
-                {% endif %}">
-        {{ message }}
-      </div>
-      {% set _ = seen_messages.append(message) %}
-      {% endif %}
-      {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
-  </div>
   <!-- Greeting Section -->
   <div class="container mx-auto py-2 px-6">
     <section class="bg-gray-900 text-white p-4 flex justify-between items-center shadow">
@@ -131,11 +110,25 @@
     </section>
   </div>
 
+  <div class="px-4 sm:px-6 md:px-8 py-4" id="flash-container">
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div id="flash-messages" class="space-y-4 max-w-md w-full mx-auto">
+          {% for category, message in messages %}
+            <div class="p-4 rounded-lg text-white shadow-md break-words
+              {% if 'error' in category %} bg-red-500 
+              {% elif 'success' in category %} bg-green-500 
+              {% else %} bg-blue-500 {% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+  
   <!-- Main Content Section -->
   <main class="p-6 space-y-8">
-
-    <!-- Greeting Section -->
-
 
     <!-- Feedback Reminder Section -->
     <section class="bg-gray-800 p-6 rounded-lg shadow-md">
@@ -203,14 +196,15 @@
   </footer>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      setTimeout(() => {
-        document.querySelectorAll(".flash-message").forEach((msg) => {
-          msg.style.opacity = "0";
-          setTimeout(() => msg.remove(), 1000);
-        });
-      }, 5000);
-    });
+    // Remove flash messages after 5 seconds
+    setTimeout(() => {
+      let flashMessages = document.getElementById("flash-messages");
+      if (flashMessages) {
+        flashMessages.style.transition = "opacity 0.5s ease-out";
+        flashMessages.style.opacity = "0";
+        setTimeout(() => flashMessages.remove(), 500); // Remove from DOM
+      }
+    }, 5000);
   </script>
 </body>
 
