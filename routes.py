@@ -22,16 +22,22 @@ app = Flask(__name__)
 @app.route('/home')
 def home():
     meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu() or (None, [], [], [])
-    current_avg_rating_mess1, current_avg_rating_mess2 = avg_rating() or (None, None)
+
+    mess1_count, mess1_rating, mess2_count, mess2_rating = avg_rating()
+
     if not meal or (not veg_menu_items and not non_veg_menu1 and not non_veg_menu2):
         return render_template("home_page.html", meal=None)
+
     return render_template("home_page.html",
         meal=meal,
         veg_menu_items=veg_menu_items,
         non_veg_menu1=non_veg_menu1,
         non_veg_menu2=non_veg_menu2,
-        current_avg_rating_mess1=current_avg_rating_mess1,
-        current_avg_rating_mess2=current_avg_rating_mess2)
+        current_avg_rating_mess1=mess1_rating,
+        current_avg_rating_mess2=mess2_rating,
+        mess1_count=mess1_count,
+        mess2_count=mess2_count
+    )
 
 # app = Flask(__name__)
 @app.route('/login', methods=['GET', 'POST'])

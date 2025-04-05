@@ -132,13 +132,13 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
         <div class="flex flex-col items-center">
-          <h3 class="text-lg font-medium mb-2">Mess Sai Rating</h3>
+          <h3 class="text-lg font-medium mb-2">Mess Sai Rating ({{mess1_count}})</h3>
           <div class="progress-circle" style="--percentage: calc({{ current_avg_rating_mess1 }} / 5 * 100)">
             <span class="progress-text">{{ current_avg_rating_mess1 }}/5</span>
           </div>
         </div>
         <div class="flex flex-col items-center">
-          <h3 class="text-lg font-medium mb-2">Mess Sheila Rating</h3>
+          <h3 class="text-lg font-medium mb-2">Mess Sheila Rating ({{mess2_count}})</h3>
           <div class="progress-circle" style="--percentage: calc({{ current_avg_rating_mess2 }} / 5 * 100)">
             <span class="progress-text">{{ current_avg_rating_mess2 }}/5</span>
           </div>
