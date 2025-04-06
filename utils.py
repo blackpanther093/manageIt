@@ -29,14 +29,15 @@ def get_current_meal(hour=None):
     connection.close()
     if hour is None:
         hour = get_fixed_time().hour  # Ensure function is called
-
-    if 0 <= hour < 11:
+        minute = get_fixed_time().minute
+        total_time = hour * 60 + minute
+    if 0 <= total_time < 11*60:
         return "Breakfast"
-    elif 11 <= hour < 16:
+    elif 11*60 <= total_time < 16*60:
         return "Lunch"
-    elif 16 <= hour < 18:
+    elif 16*60 <= total_time <= 18*60 + 30:
         return "Snacks"
-    elif 18 <= hour <= 23:
+    elif 18*60 + 30 < total_time <= 23*60 + 59:
         return "Dinner"
     return None
 
