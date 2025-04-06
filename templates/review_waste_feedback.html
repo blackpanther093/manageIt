@@ -32,6 +32,36 @@
     </div>
     {% else %}
 
+    <!-- Top 5 Most Wasted Food Items -->
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-semibold text-center mb-4 text-blue-400">Top 5 Most Wasted Food Items (Today)</h2>
+      <ul class="space-y-2 text-center">
+        {% for item in top_5_wasted_food %}
+        <li class="text-lg text-gray-200 hover:text-yellow-400 transition">
+          🍽️ {{ item[0] }} – <span class="font-semibold">{{ item[1] }} kg wasted</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Predictive Analysis -->
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-semibold text-center mb-4 text-blue-400">Top 3 Predicted Worst Foods (High Waste × Low
+        Rating)</h2>
+      {% if predicted_worst_food is string %}
+      <p class="text-center text-gray-300">{{ predicted_worst_food }}</p>
+      {% else %}
+      <ul class="space-y-2 text-center">
+        {% for item in predicted_worst_food %}
+        <li class="text-lg text-gray-200 hover:text-yellow-400 transition">
+          ⚠️ {{ item[0] | title }} ({{ item[1] | title }}) –
+          <span class="font-semibold">Waste Score: {{ item[2] | round(1) }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
     <!-- Floor-wise Waste Pie Chart -->
     <div class="bg-gray-800 rounded-xl p-4 shadow-lg">
       <h2 class="text-xl font-semibold text-center mb-4 text-blue-400">Floor-wise Waste Distribution</h2>
@@ -54,36 +84,6 @@
         <div>{{ plots | safe }}</div>
       </div>
     </div>
-
-    <!-- Top 5 Most Wasted Food Items -->
-    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-      <h2 class="text-xl font-semibold text-center mb-4 text-blue-400">Top 5 Most Wasted Food Items (Today)</h2>
-      <ul class="space-y-2 text-center">
-        {% for item in top_5_wasted_food %}
-        <li class="text-lg text-gray-200 hover:text-yellow-400 transition">
-          🍽️ {{ item[0] }} – <span class="font-semibold">{{ item[1] }} kg wasted</span>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <!-- Predictive Analysis -->
-    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-      <h2 class="text-xl font-semibold text-center mb-4 text-blue-400">Top 3 Predicted Worst Foods (High Waste × Low Rating)</h2>
-      {% if predicted_worst_food is string %}
-        <p class="text-center text-gray-300">{{ predicted_worst_food }}</p>
-      {% else %}
-        <ul class="space-y-2 text-center">
-          {% for item in predicted_worst_food %}
-          <li class="text-lg text-gray-200 hover:text-yellow-400 transition">
-            ⚠️ {{ item[0] | title }} ({{ item[1] | title }}) – 
-            <span class="font-semibold">Waste Score: {{ item[2] | round(1) }}</span>
-          </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </div>
-    
 
     {% endif %}
 
