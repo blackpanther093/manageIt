@@ -68,6 +68,7 @@
       <table class="w-full border-collapse">
         <thead class="bg-yellow-400 hover:bg-yellow-500">
           <tr>
+            <th class="py-2 px-3 border-b text-yellow-900">Mess</th>
             <th class="py-2 px-3 border-b text-yellow-900">Date</th>
             <th class="py-2 px-3 border-b text-yellow-900">Meal</th>
             <th class="py-2 px-3 border-b text-yellow-900">Food Item</th>
@@ -75,8 +76,11 @@
           </tr>
         </thead>
         <tbody>
-          {% for date, meal, food_item, amount in data %}
+          {% for mess, date, meal, food_item, amount in data %}
             <tr class="hover:bg-gray-700 transition">
+              <td class="py-2 px-3 border-b text-white">
+                {{ 'Sai' if mess == 'mess1' else 'Sheila' }}
+              </td>
               <td class="py-2 px-3 border-b text-white">{{ date }}</td>
               <td class="py-2 px-3 border-b text-white">{{ meal }}</td>
               <td class="py-2 px-3 border-b text-white">{{ food_item }}</td>

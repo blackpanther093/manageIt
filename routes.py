@@ -3,7 +3,7 @@ from flask import Flask,render_template, request, redirect, session, url_for, fl
 # from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, JWTManager
 from utils import get_menu, avg_rating, get_current_meal, is_odd_week, get_fixed_time
 from db import get_db_connection
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 # from app import app  
 import plotly.express as px
@@ -107,9 +107,9 @@ def feedback():
     student_id = session.get('student_id')
     student_name = session.get('student_name')
     mess = session.get('mess')
-    
+    created_at = get_fixed_time().date()
     if 'role' not in session or session['role'] != 'student':
-        flash ("Access Denied: Only mess officials can access this page.",'error')
+        flash ("Access Denied",'error')
         return redirect(url_for('login'))
     
     if not mess:
@@ -120,7 +120,7 @@ def feedback():
     if student_id and role == 'student':
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s AND meal = %s", (student_id, mess, meal))
+        cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = %s AND mess = %s AND meal = %s", (student_id, created_at, mess, meal))
         feedback_given = set(row[0] for row in cursor.fetchall())
         cursor.close()
         connection.close()
@@ -154,15 +154,6 @@ def feedback():
             connection = get_db_connection()
             cursor = connection.cursor()
 
-            # Check for duplicate feedback
-            cursor.execute("""
-                SELECT COUNT(*) FROM feedback_summary
-                WHERE s_id = %s AND feedback_date = CURDATE() AND meal = %s
-            """, (student_id, meal))
-            if cursor.fetchone()[0]:
-                flash("You have already submitted feedback for this meal today.", "error")
-                return redirect('/')
-
             # Collect ratings and comments
             food_ratings = {}
             comments = {}
@@ -183,8 +174,8 @@ def feedback():
             # Insert into summary
             cursor.execute("""
                 INSERT INTO feedback_summary (s_id, feedback_date, meal, mess)
-                VALUES (%s, CURDATE(), %s, %s)
-            """, (student_id, meal, mess))
+                VALUES (%s, %s, %s, %s)
+            """, (student_id, created_at, meal, mess))
             feedback_id = cursor.lastrowid
 
             # Insert into details
@@ -281,12 +272,12 @@ def waste():
         try:    
             connection = get_db_connection()
             cursor = connection.cursor()
-
+            created_at = get_fixed_time().date()
             # Insert into waste_summary
             cursor.execute("""
                 INSERT INTO waste_summary (waste_date, meal, floor, total_waste)
-                VALUES (CURDATE(), %s, %s, %s)
-            """, (meal, floor, waste_amount))
+                VALUES (%s, %s, %s, %s)
+            """, (created_at,meal, floor, waste_amount))
             waste_id = cursor.lastrowid
 
             # Insert into waste_details
@@ -315,79 +306,112 @@ def waste():
 def add_non_veg_menu():
     # Ensure only mess officials can access this page
     if 'role' not in session or session['role'] != 'mess_official':
-        flash ("Access Denied: Only mess officials can access this page",'error')
+        flash("Access Denied: Only mess officials can access this page", 'error')
         return redirect(url_for('login'))
-    
+
     mess = session.get('mess')
     if not mess:
-        flash ("Error: Mess information not found.",'error')
-        return redirect(url_for(login))
+        flash("Error: Mess information not found.", 'error')
+        return redirect(url_for('login'))
 
-    # Get meal using the existing function
+    # Get current meal
     meal, _, _, _ = get_menu()
     if not meal:
-        flash ("No meal available at the moment.",'error')
-        return redirect(url_for(home))
+        flash("No meal available at the moment.", 'error')
+        return redirect(url_for('home'))
+
+    previous_items = []
+
+    # Handle POST separately from DB logic
+    if request.method == 'POST':
+        food_items = request.form.getlist('food_item[]')
+        costs = request.form.getlist('cost[]')
         
-        # prvs_item = []
-    try:
-        connection = get_db_connection()
-        cursor = connection.cursor()
+        # Strip + normalize input
+        food_items = [item.strip() for item in food_items if item.strip()]
+        costs = [c.strip() for c in costs if c.strip()]
 
-        cursor.execute("""
-            SELECT item_id, food_item, cost 
-            FROM non_veg_menu_items i JOIN non_veg_menu_main m
-            ON i.menu_id = m.menu_id
-            WHERE menu_date = CURDATE() AND meal = %s AND mess = %s;
-        """,(meal, mess))
-        previous_items = cursor.fetchall()
+        if not food_items or not costs or len(food_items) != len(costs):
+            flash("Invalid input. Ensure all fields are filled.", 'error')
+            return redirect(url_for('add_non_veg_menu'))
 
-        if request.method == 'POST':
-            food_items = request.form.getlist('food_item[]')
-            costs = request.form.getlist('cost[]')
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor(dictionary=True)
+            created_at = get_fixed_time().date()
 
-            if not food_items or not costs or len(food_items) != len(costs):
-                flash ("Invalid input. Ensure all fields are filled.",'error')
-                return redirect(url_for(add_non_veg_menu))
-       
-            # Insert into non_veg_menu_main
+            # Check for existing duplicate items (case-insensitive)
+            placeholders = ', '.join(['%s'] * len(food_items))
+            query = f"""
+                SELECT food_item FROM non_veg_menu_items n
+                JOIN non_veg_menu_main m ON n.menu_id = m.menu_id
+                WHERE menu_date = %s AND meal = %s AND mess = %s AND LOWER(TRIM(food_item)) IN ({placeholders})
+            """
+            normalized_input = [item.lower().strip() for item in food_items]
+            params = [created_at, meal, mess] + normalized_input
+            cursor.execute(query, params)
+
+            existing_items = {row['food_item'].strip().lower() for row in cursor.fetchall()}
+            duplicates = [item for item in food_items if item.strip().lower() in existing_items]
+
+            filtered_items_and_costs = [
+                (item, cost)
+                for item, cost in zip(food_items, costs)
+                if item.strip().lower() not in existing_items
+            ]
+            
+            if not filtered_items_and_costs:
+                flash(f"All items already exist: {', '.join(duplicates)}", 'error')
+                return redirect(url_for('add_non_veg_menu'))
+            
+            if duplicates:
+                flash(f"Cannot insert duplicate food items: {', '.join(duplicates)}", 'error')
+                # return redirect(url_for('add_non_veg_menu'))  
+
+            # Insert menu main
             cursor.execute("""
                 INSERT INTO non_veg_menu_main (menu_date, meal, mess)
-                VALUES (CURDATE(), %s, %s)
-            """, (meal, mess))
+                VALUES (%s, %s, %s)
+            """, (created_at, meal, mess))
             menu_id = cursor.lastrowid
 
-            # Insert into non_veg_menu_items
-            for item, cost in zip(food_items, costs):
+            # Insert menu items
+            for item, cost in filtered_items_and_costs:
                 cursor.execute("""
                     INSERT INTO non_veg_menu_items (menu_id, food_item, cost)
                     VALUES (%s, %s, %s)
-                """, (menu_id, item, cost))
-            flash( "Item added successfully.",'success')
-            connection.commit()
+                """, (menu_id, item.strip(), cost.strip()))
 
-            # Refresh `previous_items` after insert
-            cursor.execute("""
-                SELECT item_id, food_item, cost 
-                FROM non_veg_menu_items i 
-                JOIN non_veg_menu_main m ON i.menu_id = m.menu_id
-                WHERE DATE(menu_date) = CURDATE() AND meal = %s AND mess = %s;
-            """, (meal, mess))
-            previous_items = cursor.fetchall()
+            connection.commit()
+            flash("Item(s) added successfully.", 'success')
+
+        except Exception as e:
+            print(f"Error adding non-veg menu: {e}")
+            flash(f"An error occurred while adding the menu: {str(e)}", 'error')
+        finally:
+            cursor.close()
+            connection.close()
+            return redirect(url_for('add_non_veg_menu'))
+
+    # Show previous items (GET or POST success)
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        created_at = get_fixed_time().date()
+        cursor.execute("""
+            SELECT item_id, food_item, cost 
+            FROM non_veg_menu_items i 
+            JOIN non_veg_menu_main m ON i.menu_id = m.menu_id
+            WHERE DATE(menu_date) = %s AND meal = %s AND mess = %s;
+        """, (created_at, meal, mess))
+        previous_items = cursor.fetchall()
         cursor.close()
         connection.close()
-                
-        # connection.commit()
-        # cursor.close()
-        # connection.close()
-        # return "Non-Veg menu added successfully!"
-
     except Exception as e:
-        print(f"Error adding non-veg menu: {e}")
-        flash( "An error occurred while adding the menu.",'error')
-        return redirect(url_for(add_non_veg_menu))
+        print(f"Error loading previous menu: {e}")
+        flash("Unable to load existing menu items.", 'error')
 
-    return render_template('add_non_veg_menu.html', meal=meal, mess=mess,  previous_items=previous_items)
+    return render_template('add_non_veg_menu.html', meal=meal, mess=mess, previous_items=previous_items)
 
 @app.route('/delete_item', methods=['POST'])
 def delete_item():
@@ -453,25 +477,30 @@ def mess_switch_activity():
 
     mess_name = session['mess']
     # username = session.get('student_name', 'Mess Official')
-
+    joined_students = []
+    left_students = []
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
 
+    cur.execute("SELECT is_enabled from feature_toggle LIMIT 1")
+    result = cur.fetchone()
+    entry = result['is_enabled'] if result else False
     # Students requesting to join this mess
-    cur.execute("""
-        SELECT s_id
-        FROM mess_switch_requests
-        WHERE desired_mess = %s
-    """, (mess_name,))
-    joined_students = cur.fetchall()
+    if not (entry):    
+        cur.execute("""
+            SELECT count(*) as count, s_id
+            FROM mess_switch_requests
+            WHERE desired_mess = %s
+        """, (mess_name,))
+        joined_students = cur.fetchall()
 
-    # Students currently in this mess and switching out
-    cur.execute("""
-        SELECT s_id
-        FROM mess_switch_requests
-        WHERE desired_mess != %s 
-    """, (mess_name,))
-    left_students = cur.fetchall()
+        # Students currently in this mess and switching out
+        cur.execute("""
+            SELECT count(*) as count, s_id
+            FROM mess_switch_requests
+            WHERE desired_mess != %s 
+        """, (mess_name,))
+        left_students = cur.fetchall()
 
     cur.close()
     conn.close()
@@ -489,13 +518,13 @@ def add_payment():
 
     mess_name = session['mess']
     meal = get_current_meal()
-
+    created_at = get_fixed_time().date()
+    # print(meal)
     if request.method == 'POST':
         try:
             s_id = request.form.get('s_id')
             food_item = request.form.get('food_item')
             payment_mode = request.form.get('payment_mode')
-
             # Validate student
             with get_db_connection() as connection_main, connection_main.cursor() as cursor_main:
                 cursor_main.execute("SELECT mess FROM student WHERE s_id = %s", (s_id,))
@@ -504,14 +533,14 @@ def add_payment():
                 if not student_data or student_data[0] != mess_name:
                     flash("Invalid student ID or student not from your mess.", "error")
                     return redirect(url_for('add_payment'))
-                cursor_main.fetchall()
+                # cursor_main.fetchall()
                 # Fetch amount for the selected food item
                 # with get_db_connection() as connection, connection.cursor() as cursor:
                 cursor_main.execute("""
                     SELECT item_id,cost FROM non_veg_menu_items n
                     JOIN non_veg_menu_main m ON n.menu_id = m.menu_id
-                    WHERE n.food_item = %s AND m.menu_date = CURDATE() AND m.meal = %s AND mess = %s
-                """, (food_item, meal, mess_name))
+                    WHERE n.food_item = %s AND m.menu_date = %s AND m.meal = %s AND mess = %s
+                """, (food_item, created_at,meal, mess_name))
                 amount_data = cursor_main.fetchone()
 
                 if not amount_data:
@@ -523,8 +552,8 @@ def add_payment():
                 # Insert payment record
                 cursor_main.execute("""
                     INSERT INTO payment (s_id, mess, meal, payment_date, food_item, amount, payment_mode, item_id)
-                    VALUES (%s, %s, %s, CURDATE(), %s, %s, %s, %s)
-                """, (s_id, mess_name, meal, food_item, amount, payment_mode, item_id))
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (s_id, mess_name, meal, created_at, food_item, amount, payment_mode, item_id))
 
                 connection_main.commit()
                 cursor_main.close()
@@ -546,8 +575,8 @@ def add_payment():
                 SELECT n.food_item, n.cost
                 FROM non_veg_menu_items n
                 JOIN non_veg_menu_main m ON n.menu_id = m.menu_id
-                WHERE m.menu_date = CURDATE() AND m.meal = %s AND m.mess = %s
-            """, (meal, mess_name))
+                WHERE m.menu_date = %s AND m.meal = %s AND m.mess = %s
+            """, (created_at, meal, mess_name))
             food_items = cursor.fetchall()
             connection.commit()
             cursor.close()
@@ -581,13 +610,14 @@ def payment_summary():
     try:
         with get_db_connection() as connection, connection.cursor() as cursor:
             # Query to get the summary of total amounts per day and meal
+            created_at = get_fixed_time().date()
             cursor.execute("""
                 SELECT payment_date, GROUP_CONCAT(food_item SEPARATOR ', ') AS food_item, meal, SUM(amount) AS total_amount
                 FROM payment
-                WHERE mess = %s AND payment_date >= CURDATE() - INTERVAL 30 DAY
+                WHERE mess = %s AND payment_date >= %s - INTERVAL 30 DAY
                 GROUP BY payment_date, meal
                 ORDER BY payment_date DESC;
-            """, (mess_name,))
+            """, (mess_name, created_at))
             summary_data = cursor.fetchall()
 
             if not summary_data:
@@ -655,22 +685,23 @@ def review_waste_feedback():
     try:
         connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
-
+        created_at = get_fixed_time().date()
+        current_meal = get_current_meal()
         # Fetch waste and feedback from last 30 days
         cursor.execute("""
             SELECT w.waste_date, w.floor, w.meal, wd.food_item, wd.leftover_amount
             FROM waste_summary w
             JOIN waste_details wd ON w.waste_id = wd.waste_id
-            WHERE w.waste_date >= CURDATE() - INTERVAL 30 DAY
-        """)
+            WHERE w.waste_date >= %s - INTERVAL 30 DAY
+        """, (created_at,))
         waste_data = cursor.fetchall()
 
         cursor.execute("""
             SELECT fs.feedback_date, fs.meal, fs.mess, fd.food_item, fd.rating
             FROM feedback_summary fs
             JOIN feedback_details fd ON fs.feedback_id = fd.feedback_id
-            WHERE fs.feedback_date >= CURDATE() - INTERVAL 30 DAY
-        """)
+            WHERE fs.feedback_date >= %s - INTERVAL 30 DAY
+        """, (created_at,))
         feedback_data = cursor.fetchall()
 
         connection.close()
@@ -733,9 +764,24 @@ def review_waste_feedback():
         # return render_template('feedback_line_plot.html', plots=plots)
 
         # 📊 4. Top 5 most wasted food items
-        top5_df = waste_df.groupby('food_item')['leftover_amount'].sum().sort_values(ascending=False).head(5)
+        min_date = waste_df['waste_date'].min().date()
+        relevant_dates = []
+        check_date = today.date() - timedelta(days=14)
+
+        while check_date >= min_date:
+            relevant_dates.append(check_date)
+            check_date -= timedelta(days=14)
+
+        same_menu_df = waste_df[
+            (waste_df['waste_date'].dt.date.isin(relevant_dates)) &
+            (waste_df['meal'] == current_meal)
+        ]
+
+        # Get top 5 wasted items
+        top5_df = same_menu_df.groupby('food_item')['leftover_amount'].sum().sort_values(ascending=False).head(5)
         top5_waste_list = top5_df.reset_index().values.tolist()
 
+        
         # ⏱️ Only include data that is a multiple of 14 days from today
         def is_multiple_of_14_days_ago(past_date, ref_date):
             delta = (ref_date - past_date).days
@@ -757,10 +803,10 @@ def review_waste_feedback():
         # merged_df = pd.merge(waste_relevant, feedback_relevant, on=['food_item', 'meal'], how='inner')
         # merged_df['waste_score'] = merged_df['leftover_amount'] * (6 - merged_df['rating'])
 
-        print("Waste dates considered:", waste_relevant['waste_date'].unique())
-        print("Feedback dates considered:", feedback_relevant['feedback_date'].unique())
-        print("🧪 Waste Items:", waste_relevant['food_item'].unique())
-        print("🧪 Feedback Items:", feedback_relevant['food_item'].unique())
+        # print("Waste dates considered:", waste_relevant['waste_date'].unique())
+        # print("Feedback dates considered:", feedback_relevant['feedback_date'].unique())
+        # print("🧪 Waste Items:", waste_relevant['food_item'].unique())
+        # print("🧪 Feedback Items:", feedback_relevant['food_item'].unique())
 
         if not waste_relevant.empty and not feedback_relevant.empty:
             # Merge based on food item and meal only (ignore exact dates since it's cyclic)
@@ -809,21 +855,23 @@ def notifications():
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
-
+        created_at = get_fixed_time().date()
         # 📌 1️⃣ Fetch notifications from the `notifications` table (last 7 days only)
         if role == 'student':
             cursor.execute(
-                "SELECT message, created_at FROM notifications WHERE recipient_type IN ('student') AND created_at >= NOW() - INTERVAL 7 DAY ORDER BY created_at DESC"
+                "SELECT message, created_at FROM notifications WHERE recipient_type IN ('student') AND created_at >= %s - INTERVAL 7 DAY ORDER BY created_at DESC", (created_at,)
             )
         elif role == 'mess_official':
             cursor.execute(
-                "SELECT message, created_at FROM notifications WHERE recipient_type IN ('mess_official') AND created_at >= NOW() - INTERVAL 7 DAY ORDER BY created_at DESC"
+                "SELECT message, created_at FROM notifications WHERE recipient_type IN ('mess_official') AND created_at >= %s - INTERVAL 7 DAY ORDER BY created_at DESC", (created_at,)
             )
 
         # 📌 Store message with timestamp
         notifications += [(row[0], row[1]) for row in cursor.fetchall()]
 
+        
         if role == 'mess_official':
+            # created_at = get_fixed_time().date()
             # ⚠️ High waste warning
             if mess_name == 'mess1':
                 floor1, floor2 = 'Ground', 'First'
@@ -834,11 +882,11 @@ def notifications():
             cursor.execute("""
                 SELECT floor, SUM(total_waste) as total_waste, waste_date 
                 FROM waste_summary 
-                WHERE waste_date >= CURDATE()  - INTERVAL 7 DAY AND (floor = %s OR floor = %s)
+                WHERE waste_date >= %s  - INTERVAL 7 DAY AND (floor = %s OR floor = %s)
                 GROUP BY floor, waste_date
                 HAVING SUM(total_waste) > 50
                 ORDER BY waste_date DESC;
-            """, (floor1, floor2))
+            """, (created_at, floor1, floor2))
             
             # cursor.execute(query, floor)
             rows = cursor.fetchall()
@@ -852,11 +900,11 @@ def notifications():
                 SELECT AVG(d.rating), s.meal, s.feedback_date 
                 FROM feedback_details d
                 JOIN feedback_summary s ON d.feedback_id = s.feedback_id
-                WHERE mess = %s AND s.feedback_date >= NOW() - INTERVAL 7 DAY
+                WHERE mess = %s AND s.feedback_date >= %s - INTERVAL 7 DAY
                 GROUP BY s.meal, s.feedback_date
                 HAVING AVG(d.rating) < 3.0
                 ORDER BY s.feedback_date DESC;
-                """, (mess_name,)
+                """, (mess_name, created_at)
             )
             rows = cursor.fetchall()
             # print("⚠️ Low feedback rows:", rows)
@@ -1051,22 +1099,24 @@ def admin_dashboard():
     try:
         conn = get_db_connection()
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT is_enabled FROM feature_toggle LIMIT 1")
+        cur.execute("SELECT is_enabled, enabled_at FROM feature_toggle LIMIT 1")
         toggle = cur.fetchone()
         if toggle:
             toggle_status = toggle['is_enabled']
+            enabled_time = toggle.get('enabled_at')
+            enabled_time = enabled_time.strftime('%B %d') if enabled_time else None
         cur.close()
         conn.close()
     except Exception as e:
         print("Error fetching toggle status:", e)
-    return render_template('admin_dashboard.html', mess_switch_enabled=toggle_status)
+    return render_template('admin_dashboard.html', enabled_time=enabled_time, mess_switch_enabled=toggle_status)
 
 @app.route('/toggle_mess_switch', methods=['GET', 'POST'])
 def toggle_mess_switch():
     if 'admin_id' not in session:
         flash('Unauthorized access. Please login.', 'error')
         return redirect(url_for('login'))
-
+    # enabl = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(dictionary=True)
@@ -1081,13 +1131,14 @@ def toggle_mess_switch():
             created_at = get_fixed_time().strftime('%Y-%m-%d %H:%M:%S')
             current_status = toggle['is_enabled']
             enabled_time = toggle.get('enabled_at')
-
+            # enabl = enabled_time
             if current_status:
                 # 1. Turn OFF
                 cur.execute("""
                     UPDATE feature_toggle
                     SET is_enabled = FALSE,
-                        disabled_at = %s
+                        disabled_at = %s,
+                        enabled_at = NULL
                 """, (created_at,))
                 
                 # 2. Apply mess switch for students who submitted during enabled time
@@ -1117,6 +1168,7 @@ def toggle_mess_switch():
                         enabled_at = %s,
                         disabled_at = NULL
                 """, (created_at,))
+                # enabl = created_at
                 flash("Mess switching feature has been turned ON", "success")
 
         conn.commit()
@@ -1155,9 +1207,10 @@ def send_notification():
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
+            created_at = get_fixed_time()
             cursor.execute(
-                "INSERT INTO notifications (message, recipient_type) VALUES (%s, %s)",
-                (message, recipient_type)
+                "INSERT INTO notifications (message, recipient_type, created_at) VALUES (%s, %s, %s)",
+                (message, recipient_type, created_at)
             )
             conn.commit()
             cursor.close()
@@ -1177,14 +1230,15 @@ def waste_summary():
 
     # mess_name = session['admin_mess']
     try:
+        created_at = get_fixed_time().date()
         with get_db_connection() as connection, connection.cursor() as cursor:
             cursor.execute("""
                 SELECT floor, SUM(total_waste) AS total_waste
                 FROM waste_summary
-                WHERE waste_date >= CURDATE() - INTERVAL 30 DAY
+                WHERE waste_date >= %s - INTERVAL 30 DAY
                 GROUP BY floor
                 ORDER BY floor;
-            """)
+            """, (created_at,))
             waste_data = cursor.fetchall()
     except Exception as e:
         print("Error fetching waste summary:")
@@ -1200,13 +1254,14 @@ def waste_detail(floor):
         return redirect(url_for('login'))
     try:
         with get_db_connection() as connection, connection.cursor() as cursor:
+            created_at = get_fixed_time().date()
             cursor.execute('''
                 SELECT waste_date AS date, SUM(total_waste) AS total_waste
                 FROM waste_summary
-                WHERE floor = %s AND (waste_date >= CURDATE() - INTERVAL 30 DAY)
+                WHERE floor = %s AND (waste_date >= %s - INTERVAL 30 DAY)
                 GROUP BY waste_date
                 ORDER BY waste_date DESC;
-            ''',(floor,))
+            ''',(floor, created_at))
             waste_data = cursor.fetchall()
 
     except Exception as e:
@@ -1447,7 +1502,7 @@ def student_dashboard():
     meal = get_current_meal()
     connection = get_db_connection()
     cursor = connection.cursor()
-
+    created_at = get_fixed_time().date()
     # Greeting
     current_hour = get_fixed_time().hour
     if current_hour < 12:
@@ -1458,7 +1513,7 @@ def student_dashboard():
         greeting = 'Good Evening'
 
     # Meal Reminder
-    cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = CURDATE() AND mess = %s AND meal = %s", (student_id, mess_name, meal))
+    cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = %s AND mess = %s AND meal = %s", (student_id, created_at, mess_name, meal))
     feedback_given = set(row[0] for row in cursor.fetchall())
     if (student_id) in feedback_given:
         feedback_status = "Feedback Submitted"
@@ -1497,10 +1552,10 @@ def student_dashboard():
         SELECT s.mess, ROUND(AVG(d.rating), 2) as avg_rating
         FROM feedback_details d
         JOIN feedback_summary s ON d.feedback_id = s.feedback_id
-        WHERE d.created_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+        WHERE d.created_at >= DATE_SUB(%s, INTERVAL 1 MONTH)
         AND d.created_at < CURDATE()
         GROUP BY s.mess;
-    """)
+    """, (created_at,))
     monthly_avg_ratings = cursor.fetchall()
     # for mess, avg in monthly_avg_ratings:
     #     print(mess)
@@ -1639,14 +1694,15 @@ def payment():
     connection = get_db_connection()
     cursor = connection.cursor()
     try:
+        created_at = get_fixed_time().date()
         cursor.execute("""
-                    SELECT payment_date, meal, food_item, amount
+                    SELECT mess, payment_date, meal, food_item, amount
                     FROM payment
-                    WHERE mess = %s AND payment_date >= CURDATE() - INTERVAL 30 DAY
+                    WHERE payment_date >= %s - INTERVAL 30 DAY
                     AND s_id = %s
                     GROUP BY payment_date, meal
                     ORDER BY payment_date DESC;
-                """, (mess_name, student_id))
+                """, (created_at, student_id))
         data = cursor.fetchall()
 
         if not data:

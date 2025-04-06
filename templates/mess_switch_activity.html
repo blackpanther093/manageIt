@@ -56,7 +56,7 @@
     
     <!-- Joined -->
     <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
-      <h2 class="text-xl font-semibold text-yellow-400 mb-2">✅ Students Switching IN</h2>
+      <h2 class="text-xl font-semibold text-yellow-400 mb-2">✅ Students Switching IN ({{joined_students[0].count if joined_students|length > 0 else 0}})</h2>
       {% if joined_students %}
         <table class="w-full border-collapse">
           <thead>
@@ -79,7 +79,7 @@
 
     <!-- Left -->
     <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
-      <h2 class="text-xl font-semibold text-red-400 mb-2">🔴 Students Switching OUT</h2>
+      <h2 class="text-xl font-semibold text-red-400 mb-2">🔴 Students Switching OUT ({{left_students[0].count if left_students|length > 0 else 0}})</h2>
       {% if left_students %}
         <table class="w-full border-collapse">
           <thead>
