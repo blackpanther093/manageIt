@@ -1472,7 +1472,7 @@ def restore_default_veg_menu():
         cursor = connection.cursor()
 
         week_type = 'Odd' if is_odd_week() else 'Even'
-        day = get_fixed_time().now().strftime('%A')
+        day = get_fixed_time().strftime('%A')
         meal = get_current_meal()
 
         # print(f"Restoring default menu for {week_type} - {day} - {meal}")  # Debugging
