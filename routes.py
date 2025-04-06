@@ -188,7 +188,7 @@ def feedback():
 
             connection.commit()
             flash("Feedback submitted successfully!", "success")
-            return redirect('/')
+            return redirect('/student_dashboard')
 
         except Exception as e:
             connection.rollback()
