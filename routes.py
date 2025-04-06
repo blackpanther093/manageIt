@@ -273,6 +273,14 @@ def waste():
             connection = get_db_connection()
             cursor = connection.cursor()
             created_at = get_fixed_time().date()
+            # Check for existing waste data for today
+            cursor.execute("""
+                SELECT COUNT(*) FROM waste_summary WHERE waste_date = %s AND meal = %s AND floor = %s
+            """, (created_at, meal, floor))
+            count = cursor.fetchone()[0]
+            if count > 1:
+                flash ("Waste data already submitted for today.",'error')
+                return redirect(url_for('waste'))
             # Insert into waste_summary
             cursor.execute("""
                 INSERT INTO waste_summary (waste_date, meal, floor, total_waste)
