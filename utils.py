@@ -113,34 +113,50 @@ def avg_rating():
     try:
         connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
-        # created_at = get_fixed_time().date()
-        query = """
-            SELECT count(*) AS count,AVG(rating) AS avg_rating
-            FROM feedback_details d JOIN feedback_summary s
-            ON d.feedback_id = s.feedback_id
-            WHERE s.meal = %s AND s.mess=%s AND DATEDIFF(CURDATE(), s.feedback_date) % 14 = 0;
+        created_at = get_fixed_time().date()
+
+        query_avg = """
+            SELECT AVG(rating) AS avg_rating
+            FROM feedback_details d
+            JOIN feedback_summary s ON d.feedback_id = s.feedback_id
+            WHERE s.meal = %s AND s.mess = %s AND DATEDIFF(%s, s.feedback_date) % 14 = 0;
         """
 
-        # Mess 1
-        cursor.execute(query, (meal, 'mess1'))
-        result1 = cursor.fetchone() or {"count": 0, "avg_rating": 0.0}
-        # print(result1)
-        # Mess 2
-        cursor.execute(query, (meal, 'mess2'))
-        result2 = cursor.fetchone() or {"count": 0, "avg_rating": 0.0}
+        query_count = """
+            SELECT COUNT(*) AS count
+            FROM feedback_summary
+            WHERE meal = %s AND mess = %s AND DATEDIFF(%s, feedback_date) % 14 = 0;
+        """
+
+        # MESS 1
+        cursor.execute(query_avg, (meal, 'mess1', created_at))
+        avg1 = cursor.fetchone() or {"avg_rating": 0.0}
+
+        cursor.execute(query_count, (meal, 'mess1', created_at))
+        count1 = cursor.fetchone() or {"count": 0}
+
+        # MESS 2
+        cursor.execute(query_avg, (meal, 'mess2', created_at))
+        avg2 = cursor.fetchone() or {"avg_rating": 0.0}
+
+        cursor.execute(query_count, (meal, 'mess2', created_at))
+        count2 = cursor.fetchone() or {"count": 0}
 
         cursor.close()
         connection.close()
 
-        # Ensure no None values
-        result1["avg_rating"] = round(result1["avg_rating"] or 0.0, 2)
-        result2["avg_rating"] = round(result2["avg_rating"] or 0.0, 2)
+        # Ensure proper rounding & defaults
+        avg1["avg_rating"] = round(avg1["avg_rating"] or 0.0, 2)
+        avg2["avg_rating"] = round(avg2["avg_rating"] or 0.0, 2)
+        count1["count"] = count1["count"] or 0
+        count2["count"] = count2["count"] or 0
 
-        return (result1["count"], result1["avg_rating"], result2["count"], result2["avg_rating"])
+        return (count1["count"], avg1["avg_rating"], count2["count"], avg2["avg_rating"])
 
     except Exception as e:
         print(f"Error fetching average rating: {e}")
         return (0, 0.0, 0, 0.0)
+
 
 def is_valid_student(student_id):
     connection = get_db_connection('mess_management')
