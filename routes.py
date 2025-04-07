@@ -1561,7 +1561,6 @@ def student_dashboard():
         FROM feedback_details d
         JOIN feedback_summary s ON d.feedback_id = s.feedback_id
         WHERE d.created_at >= DATE_SUB(%s, INTERVAL 1 MONTH)
-        AND d.created_at < CURDATE()
         GROUP BY s.mess;
     """, (created_at,))
     monthly_avg_ratings = cursor.fetchall()
