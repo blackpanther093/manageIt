@@ -139,7 +139,7 @@ def feedback():
 
     if not meal:
         flash("No meal available at the moment", "error")
-        return redirect('/')
+        return redirect('/student_dashboard')
 
     # Filter veg menu
     exclusions = {'salt', 'sugar', 'ghee', 'podi', 'coffee', 'bbj', 'sprouts', 'curd', 'papad'}
