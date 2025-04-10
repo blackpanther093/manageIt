@@ -220,7 +220,16 @@
 
     <p class="info"><span>ID:</span> {{ user_data.get('s_id', user_data.get('mess_id', user_data.get('admin_id', 'Unknown'))) }}</p>
     <p class="info"><span>Name:</span> {{ user_data.get('name', user_data.get('username', 'Not available')) }}</p>
-    <p class="info"><span>Mess:</span> {{ user_data.get('mess', 'Not applicable') }}</p>
+    <p class="info">
+      <span>Mess:</span>
+      {% if user_data.get('mess') == 'mess1' %}
+        Sai
+      {% elif user_data.get('mess') == 'mess2' %}
+        Sheila
+      {% else %}
+        Not applicable
+      {% endif %}
+    </p>
 
     <a href="{{ url_for('update_password') }}" class="btn btn-primary">Change Password</a>
   </div>
