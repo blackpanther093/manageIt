@@ -100,7 +100,7 @@
   <div class="container bg-gray-900">
     <div class="form-container">
       <h1 class="text-3xl mt-4 font-bold text-white mb-8">Feedback Form</h1>
-      <p class="text-lg mb-4 text-yellow-400">Welcome, {{ student_name }} from Mess {{ mess }}</p>
+      <p class="text-lg mb-4 text-yellow-400">Welcome, {{ student_name }} from Mess {% if mess == 'mess1' %}Sai{% else %}Sheila{% endif %}</p>
       <p class="text-md mb-6 text-yellow-400">Meal: <strong>{{ meal }}</strong></p>
 
       {% with messages = get_flashed_messages(with_categories=True) %}
