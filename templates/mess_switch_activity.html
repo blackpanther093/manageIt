@@ -55,7 +55,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
     
     <!-- JOINED STUDENTS -->
-  <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
+  <div class="bg-gray-800 rounded-lg shadow-md table-container p-4 mb-6">
     <h2 class="text-xl font-semibold text-yellow-400 mb-2">
       ✅ Students Switching IN ({{ joined_students[0]['count'] if joined_students else 0 }})
     </h2>
@@ -80,7 +80,7 @@
   </div>
 
   <!-- LEFT STUDENTS -->
-  <div class="bg-gray-800 rounded-lg shadow-md table-container p-4 mt-6">
+  <div class="bg-gray-800 rounded-lg shadow-md table-container p-4 mb-6 ">
     <h2 class="text-xl font-semibold text-red-400 mb-2">
       🔴 Students Switching OUT ({{ left_students[0]['count'] if left_students else 0 }})
     </h2>
