@@ -54,52 +54,54 @@
   <!-- Switch Tables -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
     
-    <!-- Joined -->
-    <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
-      <h2 class="text-xl font-semibold text-yellow-400 mb-2">✅ Students Switching IN ({{joined_students[0].count if joined_students|length > 0 else 0}})</h2>
-      {% if joined_students %}
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-yellow-400">
-              <th class="py-2 px-3 text-yellow-900 text-left">Student ID</th>
+    <!-- JOINED STUDENTS -->
+  <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
+    <h2 class="text-xl font-semibold text-yellow-400 mb-2">
+      ✅ Students Switching IN ({{ joined_students[0]['count'] if joined_students else 0 }})
+    </h2>
+    {% if joined_students %}
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="bg-yellow-400">
+            <th class="py-2 px-3 text-yellow-900 text-left">Student ID</th>
+          </tr>
+        </thead>
+        <tbody id="joinedTable">
+          {% for s_id in joined_students[0]['s_id'] %}
+            <tr class="hover:bg-gray-700 transition">
+              <td class="py-2 px-3 border-b">{{ s_id }}</td>
             </tr>
-          </thead>
-          <tbody id="joinedTable">
-            {% for student in joined_students %}
-              <tr class="hover:bg-gray-700 transition">
-                <td class="py-2 px-3 border-b">{{ student.s_id }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="text-gray-400">No students are currently switching in.</p>
-      {% endif %}
-    </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-gray-400">No students are currently switching in.</p>
+    {% endif %}
+  </div>
 
-    <!-- Left -->
-    <div class="bg-gray-800 rounded-lg shadow-md table-container p-4">
-      <h2 class="text-xl font-semibold text-red-400 mb-2">🔴 Students Switching OUT ({{left_students[0].count if left_students|length > 0 else 0}})</h2>
-      {% if left_students %}
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-yellow-400">
-              <th class="py-2 px-3 text-yellow-900 text-left">Student ID</th>
+  <!-- LEFT STUDENTS -->
+  <div class="bg-gray-800 rounded-lg shadow-md table-container p-4 mt-6">
+    <h2 class="text-xl font-semibold text-red-400 mb-2">
+      🔴 Students Switching OUT ({{ left_students[0]['count'] if left_students else 0 }})
+    </h2>
+    {% if left_students %}
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="bg-yellow-400">
+            <th class="py-2 px-3 text-yellow-900 text-left">Student ID</th>
+          </tr>
+        </thead>
+        <tbody id="leftTable">
+          {% for s_id in left_students[0]['s_id'] %}
+            <tr class="hover:bg-gray-700 transition">
+              <td class="py-2 px-3 border-b">{{ s_id }}</td>
             </tr>
-          </thead>
-          <tbody id="leftTable">
-            {% for student in left_students %}
-              <tr class="hover:bg-gray-700 transition">
-                <td class="py-2 px-3 border-b">{{ student.s_id }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="text-gray-400">No students are currently switching out.</p>
-      {% endif %}
-    </div>
-
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-gray-400">No students are currently switching out.</p>
+    {% endif %}
   </div>
 
   <!-- Scripts -->
