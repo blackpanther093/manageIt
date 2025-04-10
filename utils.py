@@ -22,8 +22,15 @@ def get_current_meal(hour=None):
     """ Deleting the temporary menu and Return the current meal based on IST time."""
     connection = get_db_connection()
     cursor = connection.cursor()
-    query = "DELETE FROM temporary_menu WHERE created_at < CURDATE()"  # or use appropriate condition
-    cursor.execute(query)
+    query = "DELETE FROM temporary_menu WHERE created_at < %s"  # or use appropriate condition
+    # query1 = "SELECT menu_id from non_veg_menu_main WHERE menu_date < %s"
+    query1 = "DELETE FROM non_veg_menu_items WHERE menu_id IN (SELECT menu_id FROM non_veg_menu_main WHERE menu_date < %s)"
+    query2 = "DELETE FROM non_veg_menu_main WHERE menu_date < %s"
+    cursor.execute(query, (get_fixed_time().date(),))
+    cursor.execute(query1, (get_fixed_time().date(),))
+    # menu_ids = cursor.fetchall()
+    cursor.execute(query2, (get_fixed_time().date(),))
+    # print("Temporary menu deleted successfully.") 
     connection.commit()
     cursor.close()
     connection.close()
