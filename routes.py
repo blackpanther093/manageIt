@@ -1448,9 +1448,9 @@ def update_veg_menu():
             # Insert new data
             for item in food_items:
                 cursor.execute('''
-                    INSERT INTO temporary_menu (week_type, day, meal, food_item)
-                    VALUES (%s, %s, %s, %s)
-                ''', (week_type, day, meal, item.strip()))
+                    INSERT INTO temporary_menu (week_type, day, meal, food_item, created_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (week_type, day, meal, item.strip(), get_fixed_time()))
             flash('Veg menu updated temporarily for today.', 'success')
             connection.commit()
             
