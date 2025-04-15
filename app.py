@@ -23,4 +23,4 @@ app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))
 # jwt = JWTManager(app)
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=DB_PORT, debug=True)
+    app.run(debug=True)
