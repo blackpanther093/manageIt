@@ -494,7 +494,7 @@ def mess_switch_activity():
     result = cur.fetchone()
     entry = result['is_enabled'] if result else False
     # Students requesting to join this mess
-    if entry:
+    if not entry:
         cur.execute("""
             SELECT s_id
             FROM mess_switch_requests
