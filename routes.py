@@ -494,24 +494,25 @@ def mess_switch_activity():
     result = cur.fetchone()
     entry = result['is_enabled'] if result else False
     # Students requesting to join this mess
-    cur.execute("""
-        SELECT s_id
-        FROM mess_switch_requests
-        WHERE desired_mess = %s
-    """, (mess_name,))
-    joined_rows = cur.fetchall()
-    joined_ids = [row['s_id'] for row in joined_rows]
-    joined_students = [{'count': len(joined_ids), 's_id': joined_ids}]
-
-    # Students currently in this mess and switching out
-    cur.execute("""
-        SELECT s_id
-        FROM mess_switch_requests
-        WHERE desired_mess != %s
-    """, (mess_name,))
-    left_rows = cur.fetchall()
-    left_ids = [row['s_id'] for row in left_rows]
-    left_students = [{'count': len(left_ids), 's_id': left_ids}]
+    if(entry):
+        cur.execute("""
+            SELECT s_id
+            FROM mess_switch_requests
+            WHERE desired_mess = %s
+        """, (mess_name,))
+        joined_rows = cur.fetchall()
+        joined_ids = [row['s_id'] for row in joined_rows]
+        joined_students = [{'count': len(joined_ids), 's_id': joined_ids}]
+    
+        # Students currently in this mess and switching out
+        cur.execute("""
+            SELECT s_id
+            FROM mess_switch_requests
+            WHERE desired_mess != %s
+        """, (mess_name,))
+        left_rows = cur.fetchall()
+        left_ids = [row['s_id'] for row in left_rows]
+        left_students = [{'count': len(left_ids), 's_id': left_ids}]
     cur.close()
     conn.close()
     #print("Joined Students: ",joined_students)
