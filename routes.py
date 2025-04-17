@@ -1711,7 +1711,6 @@ def payment():
                     FROM payment
                     WHERE payment_date >= %s - INTERVAL 30 DAY
                     AND s_id = %s
-                    GROUP BY payment_date, meal
                     ORDER BY payment_date DESC;
                 """, (created_at, student_id))
         data = cursor.fetchall()
