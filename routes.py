@@ -122,6 +122,12 @@ def feedback():
         cursor = connection.cursor()
         cursor.execute("SELECT DISTINCT s_id FROM feedback_summary WHERE s_id = %s AND feedback_date = %s AND mess = %s AND meal = %s", (student_id, created_at, mess, meal))
         feedback_given = set(row[0] for row in cursor.fetchall())
+
+        cursor.execute('SELECT food_item from payment WHERE s_id = %s AND meal = %s AND payment_date = %s', (student_id, meal, created_at))
+        if mess=='mess1':
+            non_veg_menu1 = cursor.fetchall()
+        else:
+            non_veg_menu2 = cursor.fetchall()
         cursor.close()
         connection.close()
         if student_id in feedback_given:
@@ -130,7 +136,7 @@ def feedback():
 
     # Time check and meal filtering logic
     current_hour = get_fixed_time().hour
-    meal, veg_menu_items, non_veg_menu1, non_veg_menu2 = get_menu()
+    _, veg_menu_items, _, _ = get_menu()
     if((meal == 'Breakfast' and current_hour < 7) or 
        (meal == 'Lunch' and current_hour < 12) or 
        (meal == 'Snacks' and current_hour < 17) or 
