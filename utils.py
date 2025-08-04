@@ -14,7 +14,7 @@ def is_odd_week(date=None):
     if date is None:
         date = get_fixed_time().date()  # Ensure function is called
 
-    start_date = datetime(2025, 2, 2).date()
+    start_date = datetime(2025, 7, 27).date()
     days_difference = (date - start_date).days
     return (days_difference // 7) % 2 == 0
 
